@@ -247,6 +247,7 @@ public class FromSkinparamToStyle {
 		addConvert("lifelineStrategy", PName.LineStyle, SName.lifeLine);
 		addConvert("wrapWidth", PName.MaximumWidth, SName.element);
 		addConvert("HyperlinkUnderline", PName.HyperlinkUnderlineThickness, SName.element);
+		addConvert("StereotypeAlignment", PName.HorizontalAlignment, SName.stereotype);
 
 	}
 
@@ -297,6 +298,8 @@ public class FromSkinparamToStyle {
 		} else if (key.equals("hyperlinkunderline")) {
 			if (value.equalsIgnoreCase("false"))
 				value = "0";
+			if (value.equalsIgnoreCase("true"))
+				value = "1";
 		}
 
 		if (value.equalsIgnoreCase("right:right"))

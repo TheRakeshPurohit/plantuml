@@ -35,70 +35,49 @@
  */
 package net.sourceforge.plantuml.project.lang;
 
+import net.sourceforge.plantuml.annotation.DuplicateCode;
 import net.sourceforge.plantuml.project.Failable;
-import net.sourceforge.plantuml.project.GanttConstraintMode;
 import net.sourceforge.plantuml.project.GanttDiagram;
-import net.sourceforge.plantuml.project.core.Moment;
-import net.sourceforge.plantuml.project.core.TaskAttribute;
 import net.sourceforge.plantuml.project.core.TaskInstant;
 import net.sourceforge.plantuml.regex.IRegex;
+import net.sourceforge.plantuml.regex.RegexConcat;
 import net.sourceforge.plantuml.regex.RegexLeaf;
+import net.sourceforge.plantuml.regex.RegexOptional;
+import net.sourceforge.plantuml.regex.RegexOr;
 import net.sourceforge.plantuml.regex.RegexResult;
 
-public class ComplementBeforeOrAfterOrAtTaskStartOrEnd implements Something<GanttDiagram> {
+public class ComplementBeforeOrAfterOrAtTaskStartOrEnd extends AbstractComplementTaskInstant {
 
-	private static final int POS_NB1 = 0;
-	private static final int POS_WORKING1 = 1;
-	private static final int POS_DAY_OR_WEEK1 = 2;
-	private static final int POS_NB2 = 3;
-	private static final int POS_WORKING2 = 4;
-	private static final int POS_DAY_OR_WEEK2 = 5;
-	private static final int POS_BEFORE_OR_AFTER = 6;
-	private static final int POS_CODE_OTHER = 7;
-	private static final int POS_START_OR_END = 8;
-
+	@DuplicateCode(reference = "ComplementIntervalsSmart")
 	public IRegex toRegex(String suffix) { // "+"
-		return new RegexLeaf("COMPLEMENT" + suffix, "(?:at|with|after|" + //
-				"(\\d+)[%s]+(working[%s]+)?(day|week)s?" + //
-				"(?:[%s]+and[%s]+(\\d+)[%s]+(working[%s]+)?(day|week)s?)?" + //
-				"[%s]+(before|after))[%s]+\\[([^\\[\\]]+?)\\].?s[%s]+(start|end)");
+		return new RegexConcat( //
+				new RegexOptional(new RegexOr( //
+						Words.single(Words.AT), //
+						Words.single(Words.WITH), //
+						Words.single(Words.AFTER), //
+						new RegexConcat( //
+								new RegexLeaf("COMPLEMENT_NB1" + suffix, "(\\d+)"), //
+								RegexLeaf.spaceOneOrMore(), //
+								new RegexLeaf("COMPLEMENT_WORKING1" + suffix, "(working[%s]+)?"),
+								new RegexLeaf("COMPLEMENT_DAY_OR_WEEK1" + suffix, "(day|week)s?"),
+								new RegexOptional(new RegexConcat(//
+										Words.exactly(Words.AND), //
+										RegexLeaf.spaceOneOrMore(), //
+										new RegexLeaf("COMPLEMENT_NB2" + suffix, "(\\d+)"), //
+										RegexLeaf.spaceOneOrMore(), //
+										new RegexLeaf("COMPLEMENT_WORKING2" + suffix, "(working[%s]+)?"),
+										new RegexLeaf("COMPLEMENT_DAY_OR_WEEK2" + suffix, "(day|week)s?"))),
+								RegexLeaf.spaceOneOrMore(), //
+								Words.namedOneOf("COMPLEMENT_BEFORE_OR_AFTER" + suffix, Words.BEFORE, Words.AFTER)))), //
+				//
+				RegexLeaf.spaceOneOrMore(),
+				//
+				new RegexLeaf("COMPLEMENT_CODE_OTHER" + suffix, SubjectTask.REGEX_TASK_CODE + ".?s"), //
+				RegexLeaf.spaceOneOrMore(), //
+				Words.namedOneOf("COMPLEMENT_START_OR_END" + suffix, Words.START, Words.END));
 	}
 
 	public Failable<TaskInstant> getMe(GanttDiagram system, RegexResult arg, String suffix) {
-		final String code = arg.get("COMPLEMENT" + suffix, POS_CODE_OTHER);
-		final String startOrEnd = arg.get("COMPLEMENT" + suffix, POS_START_OR_END);
-		final Moment task = system.getExistingMoment(code);
-		if (task == null)
-			return Failable.error("No such task " + code);
-
-		TaskInstant result = new TaskInstant(task, TaskAttribute.fromString(startOrEnd));
-		final String nb1 = arg.get("COMPLEMENT" + suffix, POS_NB1);
-		if (nb1 != null) {
-			final int factor1 = arg.get("COMPLEMENT" + suffix, POS_DAY_OR_WEEK1).startsWith("w") ? system.daysInWeek()
-					: 1;
-			final int days1 = Integer.parseInt(nb1) * factor1;
-
-			final String nb2 = arg.get("COMPLEMENT" + suffix, POS_NB2);
-			int days2 = 0;
-			if (nb2 != null) {
-				final int factor2 = arg.get("COMPLEMENT" + suffix, POS_DAY_OR_WEEK2).startsWith("w")
-						? system.daysInWeek()
-						: 1;
-				days2 = Integer.parseInt(nb2) * factor2;
-			}
-
-			int delta = days1 + days2;
-			if ("before".equalsIgnoreCase(arg.get("COMPLEMENT" + suffix, POS_BEFORE_OR_AFTER)))
-				delta = -delta;
-
-			final boolean working = arg.get("COMPLEMENT" + suffix, POS_WORKING1) != null
-					|| arg.get("COMPLEMENT" + suffix, POS_WORKING2) != null;
-
-			final GanttConstraintMode mode = working ? GanttConstraintMode.DO_NOT_COUNT_CLOSE_DAY
-					: GanttConstraintMode.IGNORE_CALENDAR;
-
-			result = result.withDelta(delta, mode, system.getDefaultPlan());
-		}
-		return Failable.ok(result);
+		return getComplementTaskInstant(system, arg, suffix);
 	}
 }

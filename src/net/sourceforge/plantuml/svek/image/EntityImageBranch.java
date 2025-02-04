@@ -46,7 +46,6 @@ import net.sourceforge.plantuml.klimt.drawing.UGraphic;
 import net.sourceforge.plantuml.klimt.font.StringBounder;
 import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 import net.sourceforge.plantuml.klimt.shape.UPolygon;
-import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.PName;
 import net.sourceforge.plantuml.style.SName;
 import net.sourceforge.plantuml.style.Style;
@@ -58,8 +57,8 @@ public class EntityImageBranch extends AbstractEntityImage {
 
 	final private static int SIZE = 12;
 
-	public EntityImageBranch(Entity entity, ISkinParam skinParam) {
-		super(entity, skinParam);
+	public EntityImageBranch(Entity entity) {
+		super(entity);
 	}
 
 	public StyleSignatureBasic getDefaultStyleDefinition() {
@@ -82,7 +81,7 @@ public class EntityImageBranch extends AbstractEntityImage {
 		final HColor border = style.value(PName.LineColor).asColor(getSkinParam().getIHtmlColorSet());
 		final HColor back = style.value(PName.BackGroundColor).asColor(getSkinParam().getIHtmlColorSet());
 		final UStroke stroke = style.getStroke();
-		final double shadowing = style.value(PName.Shadowing).asDouble();
+		final double shadowing = style.getShadowing();
 
 		diams.setDeltaShadow(shadowing);
 		final Map<UGroupType, String> typeIDent = new EnumMap<>(UGroupType.class);

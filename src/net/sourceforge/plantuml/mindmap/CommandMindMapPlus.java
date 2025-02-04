@@ -36,6 +36,7 @@
 package net.sourceforge.plantuml.mindmap;
 
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.klimt.color.HColor;
 import net.sourceforge.plantuml.klimt.color.NoSuchColorException;
@@ -63,7 +64,7 @@ public class CommandMindMapPlus extends SingleLineCommand2<MindMapDiagram> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(MindMapDiagram diagram, LineLocation location, RegexResult arg)
+	protected CommandExecutionResult executeArg(MindMapDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass)
 			throws NoSuchColorException {
 		final String type = arg.get("TYPE", 0);
 		final String label = arg.get("LABEL", 0);
@@ -73,7 +74,7 @@ public class CommandMindMapPlus extends SingleLineCommand2<MindMapDiagram> {
 			backColor = diagram.getSkinParam().getIHtmlColorSet().getColor(stringColor);
 		}
 		final boolean direction = type.contains("-") ? false : true;
-		return diagram.addIdea(backColor, type.length() - 1, Display.getWithNewlines(label),
+		return diagram.addIdea(backColor, type.length() - 1, Display.getWithNewlines(diagram.getPragma(), label),
 				IdeaShape.fromDesc(arg.get("SHAPE", 0)), direction);
 	}
 

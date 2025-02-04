@@ -45,6 +45,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import net.sourceforge.plantuml.command.MultilinesStrategy;
+import net.sourceforge.plantuml.jaws.Jaws;
+import net.sourceforge.plantuml.jaws.JawsStrange;
 import net.sourceforge.plantuml.klimt.color.NoSuchColorException;
 import net.sourceforge.plantuml.klimt.creole.Display;
 import net.sourceforge.plantuml.security.SFile;
@@ -60,11 +62,23 @@ public class BlocLines implements Iterable<StringLocated> {
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();
 		for (StringLocated line : lines) {
-			sb.append("<<<");
+			sb.append("[");
 			sb.append(line);
-			sb.append(">>>");
+			sb.append("]");
 		}
 		return sb.toString();
+	}
+
+	@JawsStrange
+	public BlocLines expandsNewline(boolean reallyExpands) {
+		if (reallyExpands == false)
+			return this;
+
+		final List<StringLocated> copy = new ArrayList<>();
+		for (StringLocated sl : lines)
+			copy.addAll(sl.expandsNewline());
+
+		return new BlocLines(copy);
 	}
 
 	public static BlocLines load(SFile f, LineLocation location) throws IOException {
@@ -101,6 +115,8 @@ public class BlocLines implements Iterable<StringLocated> {
 	}
 
 	public Display toDisplay() throws NoSuchColorException {
+		if (Jaws.TRACE)
+			System.err.println("BlocLines::toDisplay " + lines);
 		return Display.createFoo(lines);
 	}
 
@@ -126,7 +142,7 @@ public class BlocLines implements Iterable<StringLocated> {
 
 	public static BlocLines getWithNewlines(String s) {
 		final List<StringLocated> result = new ArrayList<>();
-		for (String cs : BackSlash.getWithNewlines(s))
+		for (String cs : Display.getWithNewlines3(s))
 			result.add(new StringLocated(cs, null));
 
 		return new BlocLines(result);
@@ -224,6 +240,7 @@ public class BlocLines implements Iterable<StringLocated> {
 		return new BlocLines(copy);
 	}
 
+	@JawsStrange
 	private static boolean firstColumnRemovable(List<StringLocated> data) {
 		boolean allEmpty = true;
 		for (StringLocated s : data) {

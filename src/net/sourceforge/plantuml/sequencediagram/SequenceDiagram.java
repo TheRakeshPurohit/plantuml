@@ -5,12 +5,12 @@
  * (C) Copyright 2009-2024, Arnaud Roques
  *
  * Project Info:  https://plantuml.com
- * 
+ *
  * If you like this project or if you find it useful, you can support us at:
- * 
+ *
  * https://plantuml.com/patreon (only 1$ per month!)
  * https://plantuml.com/paypal
- * 
+ *
  * This file is part of PlantUML.
  *
  * PlantUML is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import net.atmp.ImageBuilder;
 import net.sourceforge.plantuml.FileFormat;
 import net.sourceforge.plantuml.FileFormatOption;
 import net.sourceforge.plantuml.OptionFlags;
+import net.sourceforge.plantuml.Previous;
 import net.sourceforge.plantuml.UmlDiagram;
 import net.sourceforge.plantuml.abel.EntityPortion;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
@@ -64,11 +65,13 @@ import net.sourceforge.plantuml.klimt.creole.Display;
 import net.sourceforge.plantuml.klimt.drawing.UGraphic;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.log.Logme;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
 import net.sourceforge.plantuml.sequencediagram.graphic.FileMaker;
 import net.sourceforge.plantuml.sequencediagram.graphic.SequenceDiagramFileMakerPuma2;
 import net.sourceforge.plantuml.sequencediagram.graphic.SequenceDiagramTxtMaker;
 import net.sourceforge.plantuml.sequencediagram.teoz.SequenceDiagramFileMakerTeoz;
 import net.sourceforge.plantuml.skin.ColorParam;
+import net.sourceforge.plantuml.skin.PragmaKey;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
 import net.sourceforge.plantuml.skin.rose.Rose;
 import net.sourceforge.plantuml.stereo.Stereotype;
@@ -95,13 +98,13 @@ public class SequenceDiagram extends UmlDiagram {
 
 	private final Rose skin2 = new Rose();
 
-	public SequenceDiagram(UmlSource source, Map<String, String> skinParam) {
-		super(source, UmlDiagramType.SEQUENCE, skinParam);
+	public SequenceDiagram(UmlSource source, Previous previous, PreprocessingArtifact preprocessing) {
+		super(source, UmlDiagramType.SEQUENCE, previous, preprocessing);
 	}
 
 	@Deprecated
 	public Participant getOrCreateParticipant(String code) {
-		return getOrCreateParticipant(code, Display.getWithNewlines(code));
+		return getOrCreateParticipant(code, Display.getWithNewlines(getPragma(), code));
 	}
 
 	public Participant getOrCreateParticipant(String code, Display display) {
@@ -145,7 +148,7 @@ public class SequenceDiagram extends UmlDiagram {
 
 		if (Display.isNull(display)) {
 			// display = Arrays.asList(code);
-			display = Display.getWithNewlines(code);
+			display = Display.getWithNewlines(getPragma(), code);
 		}
 		final Participant result = new Participant(type, code, display, hiddenPortions, order,
 				getSkinParam().getCurrentStyleBuilder());
@@ -191,7 +194,7 @@ public class SequenceDiagram extends UmlDiagram {
 	}
 
 	private AbstractMessage getLastAbstractMessage() {
-		for (int i = events.size() - 1; i > 0; i--)
+		for (int i = events.size() - 1; i >= 0; i--)
 			if (events.get(i) instanceof AbstractMessage)
 				return (AbstractMessage) events.get(i);
 
@@ -280,12 +283,14 @@ public class SequenceDiagram extends UmlDiagram {
 	}
 
 	private boolean modeTeoz() {
-		return OptionFlags.FORCE_TEOZ || getPragma().useTeozLayout();
+		return OptionFlags.FORCE_TEOZ || getPragma().isTrue(PragmaKey.TEOZ);
 	}
 
+
+	@Override
 	public ImageBuilder createImageBuilder(FileFormatOption fileFormatOption) throws IOException {
-		return super.createImageBuilder(fileFormatOption).annotations(false); // they are managed in the
-																				// SequenceDiagramFileMaker* classes
+		return super.createImageBuilder(fileFormatOption).annotations(false);
+		// they are managed in the SequenceDiagramFileMaker* classes
 	}
 
 	@Override

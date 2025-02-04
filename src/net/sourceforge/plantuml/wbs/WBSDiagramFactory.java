@@ -36,13 +36,15 @@
 package net.sourceforge.plantuml.wbs;
 
 import java.util.List;
-import java.util.Map;
 
+import net.sourceforge.plantuml.Previous;
 import net.sourceforge.plantuml.command.Command;
 import net.sourceforge.plantuml.command.CommonCommands;
 import net.sourceforge.plantuml.command.PSystemCommandFactory;
 import net.sourceforge.plantuml.core.DiagramType;
 import net.sourceforge.plantuml.core.UmlSource;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.skin.UmlDiagramType;
 
 public class WBSDiagramFactory extends PSystemCommandFactory {
 
@@ -60,8 +62,14 @@ public class WBSDiagramFactory extends PSystemCommandFactory {
 	}
 
 	@Override
-	public WBSDiagram createEmptyDiagram(UmlSource source, Map<String, String> skinParam) {
-		return new WBSDiagram(source);
+	public WBSDiagram createEmptyDiagram(UmlSource source, Previous previous, PreprocessingArtifact preprocessing) {
+		return new WBSDiagram(source, preprocessing);
 	}
+	
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return UmlDiagramType.WBS;
+	}
+
 
 }

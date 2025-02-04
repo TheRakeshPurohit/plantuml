@@ -149,11 +149,13 @@ public class NwGroup implements NStackable {
 			final double dy = size.getMinY() - blockDim.getHeight();
 			size = size.addPoint(size.getMinX(), dy);
 		}
-		HColor color = getColor();
-		if (color == null)
-			color = style.value(PName.BackGroundColor).asColor(skinParam.getIHtmlColorSet());
+		HColor backgroundColor = getColor();
+		if (backgroundColor == null)
+			backgroundColor = style.value(PName.BackGroundColor).asColor(skinParam.getIHtmlColorSet());
 
-		size.draw(ug, color);
+		final HColor lineColor = style.value(PName.LineColor).asColor(skinParam.getIHtmlColorSet());
+
+		size.draw(ug, lineColor, backgroundColor);
 
 		if (block != null)
 			block.drawU(ug.apply(new UTranslate(size.getMinX() + 5, size.getMinY())));
@@ -166,7 +168,7 @@ public class NwGroup implements NStackable {
 
 		final StyleBuilder styleBuilder = skinParam.getCurrentStyleBuilder();
 		final Style style = getStyleDefinition().getMergedStyle(styleBuilder);
-		return Display.getWithNewlines(getDescription())
+		return Display.getWithNewlines(skinParam.getPragma(), getDescription())
 				.create(style.getFontConfiguration(skinParam.getIHtmlColorSet()), HorizontalAlignment.LEFT, skinParam);
 	}
 

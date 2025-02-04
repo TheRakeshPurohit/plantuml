@@ -47,7 +47,6 @@ import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.klimt.shape.TextBlockUtils;
 import net.sourceforge.plantuml.stereo.Stereotype;
-import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.SName;
 import net.sourceforge.plantuml.style.Style;
 import net.sourceforge.plantuml.style.StyleSignatureBasic;
@@ -58,25 +57,23 @@ import net.sourceforge.plantuml.url.Url;
 public class EntityImageState2 extends AbstractEntityImage {
 
 	final private Url url;
-	private final SName sname;
 
 	private final TextBlock asSmall;
 
-	public EntityImageState2(Entity entity, ISkinParam skinParam, SName sname) {
-		super(entity, skinParam);
-		this.sname = sname;
+	public EntityImageState2(Entity entity) {
+		super(entity);
 		final Stereotype stereotype = entity.getStereotype();
 
 		final USymbol symbol = USymbols.FRAME;
-		final Fashion ctx = getStyle().getSymbolContext(skinParam.getIHtmlColorSet());
+		final Fashion ctx = getStyle().getSymbolContext(getSkinParam().getIHtmlColorSet());
 
 		this.url = entity.getUrl99();
 		TextBlock stereo = TextBlockUtils.empty(0, 0);
 
-		final TextBlock desc = BodyFactory.create2(skinParam.getDefaultTextAlignment(HorizontalAlignment.CENTER),
-				entity.getDisplay(), skinParam, stereotype, entity, getStyle());
+		final TextBlock desc = BodyFactory.create2(getSkinParam().getDefaultTextAlignment(HorizontalAlignment.CENTER),
+				entity.getDisplay(), getSkinParam(), stereotype, entity, getStyle());
 
-		asSmall = symbol.asSmall(null, desc, stereo, ctx, skinParam.getStereotypeAlignment());
+		asSmall = symbol.asSmall(null, desc, stereo, ctx, getSkinParam().getStereotypeAlignment());
 
 	}
 
@@ -85,7 +82,7 @@ public class EntityImageState2 extends AbstractEntityImage {
 	}
 
 	private StyleSignatureBasic getStyleSignature() {
-		return StyleSignatureBasic.of(SName.root, SName.element, sname, SName.state);
+		return StyleSignatureBasic.of(SName.root, SName.element, getStyleName(), SName.state);
 	}
 
 	public ShapeType getShapeType() {

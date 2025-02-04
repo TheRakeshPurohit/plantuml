@@ -40,10 +40,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import net.sourceforge.plantuml.jaws.JawsStrange;
 import net.sourceforge.plantuml.style.AutomaticCounter;
 import net.sourceforge.plantuml.style.PName;
 import net.sourceforge.plantuml.style.Style;
 import net.sourceforge.plantuml.style.StyleScheme;
+import net.sourceforge.plantuml.style.StyleSignatureBasic;
 import net.sourceforge.plantuml.style.Value;
 import net.sourceforge.plantuml.style.ValueImpl;
 import net.sourceforge.plantuml.utils.BlocLines;
@@ -98,7 +100,7 @@ public class StyleParser {
 				String full = token.getData();
 				if (ins.peek(0).getType() == StyleTokenType.STAR) {
 					ins.jump();
-					full += "*";
+					full += StyleSignatureBasic.STAR;
 				}
 				skipNewLines(ins);
 				if (ins.peek(0).getType() == StyleTokenType.OPEN_BRACKET) {
@@ -219,6 +221,7 @@ public class StyleParser {
 		}
 	}
 
+	@JawsStrange
 	private static List<StyleToken> parse(CharInspector ins) throws StyleParsingException {
 		final List<StyleToken> result = new ArrayList<>();
 		while (true) {
@@ -245,7 +248,7 @@ public class StyleParser {
 				result.add(new StyleToken(StyleTokenType.NEWLINE, "NEWLINE"));
 				ins.jump();
 			} else if (current == '*') {
-				result.add(new StyleToken(StyleTokenType.STAR, "*"));
+				result.add(new StyleToken(StyleTokenType.STAR, StyleSignatureBasic.STAR));
 				ins.jump();
 			} else if (current == ':') {
 				result.add(new StyleToken(StyleTokenType.COLON, ":"));

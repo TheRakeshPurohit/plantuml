@@ -42,6 +42,7 @@ import net.sourceforge.plantuml.abel.LinkArg;
 import net.sourceforge.plantuml.activitydiagram.ActivityDiagram;
 import net.sourceforge.plantuml.classdiagram.command.CommandLinkClass;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.decoration.LinkDecor;
 import net.sourceforge.plantuml.decoration.LinkType;
@@ -93,7 +94,7 @@ public class CommandIf extends SingleLineCommand2<ActivityDiagram> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(ActivityDiagram diagram, LineLocation location, RegexResult arg) {
+	protected CommandExecutionResult executeArg(ActivityDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass) {
 		final Entity entity1 = CommandLinkActivity.getEntity(diagram, arg, true);
 		if (entity1 == null)
 			return CommandExecutionResult.error("No if possible at this point");
@@ -124,8 +125,8 @@ public class CommandIf extends SingleLineCommand2<ActivityDiagram> {
 
 		final Entity branch = diagram.getCurrentContext().getBranch();
 
-		final LinkArg linkArg = LinkArg.build(Display.getWithNewlines(arg.get("BRACKET", 0)), lenght);
-		Link link = new Link(diagram.getEntityFactory(), diagram.getSkinParam().getCurrentStyleBuilder(), entity1,
+		final LinkArg linkArg = LinkArg.build(Display.getWithNewlines(diagram.getPragma(), arg.get("BRACKET", 0)), lenght);
+		Link link = new Link(diagram, diagram.getSkinParam().getCurrentStyleBuilder(), entity1,
 				branch, new LinkType(LinkDecor.ARROW, LinkDecor.NONE), linkArg.withQuantifier(null, ifLabel)
 						.withDistanceAngle(diagram.getLabeldistance(), diagram.getLabelangle()));
 		if (arg.get("ARROW", 0) != null) {

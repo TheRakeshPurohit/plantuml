@@ -62,17 +62,24 @@ public abstract class Player implements TimeProjected {
 	private final Display title;
 	protected int suggestedHeight;
 	protected final Stereotype stereotype;
+	private final HColor generalBackgroundColor;
 
-	public Player(String title, ISkinParam skinParam, TimingRuler ruler, boolean compact, Stereotype stereotype) {
+	public Player(String title, ISkinParam skinParam, TimingRuler ruler, boolean compact, Stereotype stereotype,
+			HColor generalBackgroundColor) {
+		this.generalBackgroundColor = generalBackgroundColor;
 		this.stereotype = stereotype;
 		this.skinParam = skinParam;
 		this.compact = compact;
 		this.ruler = ruler;
-		this.title = Display.getWithNewlines(title);
+		this.title = Display.getWithNewlines(skinParam.getPragma(), title);
 	}
 
 	public boolean isCompact() {
 		return compact;
+	}
+
+	public HColor getGeneralBackgroundColor() {
+		return generalBackgroundColor;
 	}
 
 	protected abstract StyleSignature getStyleSignature();
@@ -104,7 +111,7 @@ public abstract class Player implements TimeProjected {
 		return title.create(getFontConfiguration(), HorizontalAlignment.LEFT, skinParam);
 	}
 
-	public abstract void addNote(TimeTick now, Display note, Position position);
+	public abstract void addNote(TimeTick now, Display note, Position position, Stereotype stereotype);
 
 	public abstract void defineState(String stateCode, String label);
 

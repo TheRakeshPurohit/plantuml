@@ -43,11 +43,13 @@ import net.sourceforge.plantuml.command.Command;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.command.CommandMultilines2;
 import net.sourceforge.plantuml.command.MultilinesStrategy;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.command.Trim;
 import net.sourceforge.plantuml.klimt.color.ColorParser;
 import net.sourceforge.plantuml.klimt.color.ColorType;
 import net.sourceforge.plantuml.klimt.color.NoSuchColorException;
+import net.sourceforge.plantuml.klimt.creole.Display;
 import net.sourceforge.plantuml.plasma.Quark;
 import net.sourceforge.plantuml.regex.IRegex;
 import net.sourceforge.plantuml.regex.RegexConcat;
@@ -60,7 +62,7 @@ import net.sourceforge.plantuml.utils.BlocLines;
 import net.sourceforge.plantuml.utils.LineLocation;
 
 public final class CommandFactoryNote implements SingleMultiFactoryCommand<AbstractEntityDiagram> {
-    // ::remove folder when __HAXE__
+	// ::remove folder when __HAXE__
 
 	private IRegex getRegexConcatMultiLine() {
 		return RegexConcat.build(CommandFactoryNote.class.getName() + "multi", RegexLeaf.start(), //
@@ -101,10 +103,10 @@ public final class CommandFactoryNote implements SingleMultiFactoryCommand<Abstr
 		return new SingleLineCommand2<AbstractEntityDiagram>(getRegexConcatSingleLine()) {
 
 			@Override
-			protected CommandExecutionResult executeArg(final AbstractEntityDiagram system, LineLocation location,
-					RegexResult arg) throws NoSuchColorException {
-				final String display = arg.get("DISPLAY", 0);
-				return executeInternal(system, arg, BlocLines.getWithNewlines(display));
+			protected CommandExecutionResult executeArg(final AbstractEntityDiagram diagram, LineLocation location,
+					RegexResult arg, ParserPass currentPass) throws NoSuchColorException {
+				final Display display = Display.getWithNewlines(diagram.getPragma(), arg.get("DISPLAY", 0));
+				return executeInternal(diagram, arg, display);
 			}
 
 		};
@@ -119,18 +121,20 @@ public final class CommandFactoryNote implements SingleMultiFactoryCommand<Abstr
 				return "^[%s]*end[%s]?note$";
 			}
 
-			protected CommandExecutionResult executeNow(final AbstractEntityDiagram system, BlocLines lines)
-					throws NoSuchColorException {
+			@Override
+			protected CommandExecutionResult executeNow(final AbstractEntityDiagram diagram, BlocLines lines,
+					ParserPass currentPass) throws NoSuchColorException {
 				// StringUtils.trim(lines, false);
 				final RegexResult line0 = getStartingPattern().matcher(lines.getFirst().getTrimmed().getString());
-				lines = lines.subExtract(1, 1);
+				lines = lines.subExtract(1, 1).expandsNewline(false);
 				lines = lines.removeEmptyColumns();
-				return executeInternal(system, line0, lines);
+				final Display display = lines.toDisplay();
+				return executeInternal(diagram, line0, display);
 			}
 		};
 	}
 
-	private CommandExecutionResult executeInternal(AbstractEntityDiagram diagram, RegexResult arg, BlocLines display)
+	private CommandExecutionResult executeInternal(AbstractEntityDiagram diagram, RegexResult arg, Display display)
 			throws NoSuchColorException {
 		final String idShort = arg.get("CODE", 0);
 		final Quark<Entity> quark = diagram.quarkInContext(false, diagram.cleanId(idShort));
@@ -138,7 +142,7 @@ public final class CommandFactoryNote implements SingleMultiFactoryCommand<Abstr
 		if (quark.getData() != null)
 			return CommandExecutionResult.error("Note already created: " + quark.getName());
 
-		final Entity entity = diagram.reallyCreateLeaf(quark, display.toDisplay(), LeafType.NOTE, null);
+		final Entity entity = diagram.reallyCreateLeaf(quark, display, LeafType.NOTE, null);
 
 		assert entity != null;
 		final String s = arg.get("COLOR", 0);

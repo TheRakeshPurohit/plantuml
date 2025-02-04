@@ -40,6 +40,7 @@ import java.util.Set;
 
 import net.sourceforge.plantuml.DefinitionsContainer;
 import net.sourceforge.plantuml.log.Logme;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
 import net.sourceforge.plantuml.preproc.Defines;
 import net.sourceforge.plantuml.preproc.FileWithSuffix;
 import net.sourceforge.plantuml.preproc.ImportedFiles;
@@ -51,12 +52,13 @@ public class TimLoader {
 	private final TMemory global = new TMemoryGlobal();
 	private boolean preprocessorError;
 	private List<StringLocated> resultList;
+	private PreprocessingArtifact preprocessingArtifact;
 
 	public TimLoader(ImportedFiles importedFiles, Defines defines, Charset charset,
-			DefinitionsContainer definitionsContainer) {
+			DefinitionsContainer definitionsContainer, StringLocated location) {
 		this.context = new TContext(importedFiles, defines, charset, definitionsContainer);
 		try {
-			defines.copyTo(global);
+			defines.copyTo(global, location);
 		} catch (EaterException e) {
 			Logme.error(e);
 		}
@@ -66,12 +68,13 @@ public class TimLoader {
 //		CodeIteratorImpl.indentNow(list);
 		try {
 			context.executeLines(global, list, null, false);
-		} catch (EaterExceptionLocated e) {
+		} catch (EaterException e) {
 			context.getResultList().add(e.getLocation().withErrorPreprocessor(e.getMessage()));
 			changeLastLine(context.getDebug(), e.getMessage());
 			this.preprocessorError = true;
 		}
 		this.resultList = context.getResultList();
+		this.preprocessingArtifact = context.getPreprocessingArtifact();
 		return context.getFilesUsedCurrent();
 	}
 
@@ -91,6 +94,10 @@ public class TimLoader {
 
 	public final boolean isPreprocessorError() {
 		return preprocessorError;
+	}
+
+	public PreprocessingArtifact getPreprocessingArtifact() {
+		return preprocessingArtifact;
 	}
 
 }

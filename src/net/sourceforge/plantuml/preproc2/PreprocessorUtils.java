@@ -36,17 +36,24 @@
  */
 package net.sourceforge.plantuml.preproc2;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.sourceforge.plantuml.StringUtils;
 import net.sourceforge.plantuml.log.Logme;
 import net.sourceforge.plantuml.preproc.ReadLine;
+import net.sourceforge.plantuml.preproc.ReadLineConcat;
 import net.sourceforge.plantuml.preproc.ReadLineReader;
 import net.sourceforge.plantuml.preproc.ReadLineSimple;
 import net.sourceforge.plantuml.preproc.StartDiagramExtractReader;
@@ -54,7 +61,6 @@ import net.sourceforge.plantuml.preproc.Stdlib;
 import net.sourceforge.plantuml.security.SURL;
 import net.sourceforge.plantuml.text.StringLocated;
 import net.sourceforge.plantuml.tim.EaterException;
-import net.sourceforge.plantuml.utils.LineLocation;
 import net.sourceforge.plantuml.utils.Log;
 
 public class PreprocessorUtils {
@@ -118,9 +124,9 @@ public class PreprocessorUtils {
 
 		final String description = "<" + filename + ">";
 		try {
-			if (StartDiagramExtractReader.containsStartDiagram(is, s, description)) {
+			if (StartDiagramExtractReader.containsStartDiagram(is, description)) {
 				is = getStdlibInputStream(filename);
-				return StartDiagramExtractReader.build(is, s, description);
+				return StartDiagramExtractReader.build(is, description);
 			}
 			is = getStdlibInputStream(filename);
 			if (is == null)
@@ -133,27 +139,40 @@ public class PreprocessorUtils {
 		}
 	}
 
+	public static ReadLine getReaderStdlibIncludeSprites(StringLocated s, String root) throws IOException {
+		final Stdlib lib = Stdlib.retrieve(root);
+		final Collection<String> filenames = lib.getAllFilenamesWithSprites();
+		final List<ReadLine> readers = new ArrayList<>();
+
+		for (String name : filenames) {
+			final String data = lib.loadResource(name);
+			final InputStream is = new ByteArrayInputStream(data.getBytes(UTF_8));
+			readers.add(StartDiagramExtractReader.build(is, "<" + root + "/" + name + ">"));
+		}
+		return new ReadLineConcat(readers);
+	}
+
 	public static ReadLine getReaderIncludeUrl(final SURL url, StringLocated s, String suf, Charset charset)
 			throws EaterException {
 		try {
 			if (StartDiagramExtractReader.containsStartDiagram(url, s, charset))
 				return StartDiagramExtractReader.build(url, s, suf, charset);
 
-			return getReaderInclude(url, s.getLocation(), charset);
+			return getReaderInclude(url, s, charset);
 		} catch (IOException e) {
 			Logme.error(e);
-			throw EaterException.located("Cannot open URL " + e.getMessage());
+			throw new EaterException("Cannot open URL " + e.getMessage(), s);
 		}
 
 	}
 
-	public static ReadLine getReaderInclude(SURL url, LineLocation lineLocation, Charset charset)
+	public static ReadLine getReaderInclude(SURL url, StringLocated s, Charset charset)
 			throws EaterException, UnsupportedEncodingException {
 		final InputStream is = url.openStream();
 		if (is == null)
-			throw EaterException.located("Cannot open URL");
+			throw new EaterException("Cannot open URL", s);
 
-		return ReadLineReader.create(new InputStreamReader(is, charset), url.toString(), lineLocation);
+		return ReadLineReader.create(new InputStreamReader(is, charset), url.toString(), s.getLocation());
 	}
 
 }

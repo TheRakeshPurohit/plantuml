@@ -41,30 +41,27 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 
+import net.atmp.CucaDiagram;
 import net.sourceforge.plantuml.abel.Entity;
 import net.sourceforge.plantuml.abel.GroupType;
 import net.sourceforge.plantuml.abel.LeafType;
-import net.sourceforge.plantuml.cucadiagram.ICucaDiagram;
 import net.sourceforge.plantuml.klimt.font.StringBounder;
+import net.sourceforge.plantuml.svek.DotMode;
 import net.sourceforge.plantuml.svek.GroupMakerState;
 import net.sourceforge.plantuml.svek.IEntityImage;
 
 public final class CucaDiagramSimplifierState {
 
-	private final ICucaDiagram diagram;
-	private final StringBounder stringBounder;
-
-	public CucaDiagramSimplifierState(ICucaDiagram diagram, List<String> dotStrings, StringBounder stringBounder)
+	public void simplify(CucaDiagram diagram, StringBounder stringBounder, DotMode dotMode)
 			throws IOException, InterruptedException {
-		this.diagram = diagram;
-		this.stringBounder = stringBounder;
 		boolean changed;
 		do {
 			changed = false;
 			final Collection<Entity> groups = getOrdered(diagram.getRootGroup());
 			for (Entity g : groups)
 				if (g.isAutarkic()) {
-					final IEntityImage img = computeImage(g);
+					final GroupMakerState maker = new GroupMakerState(diagram, g, stringBounder, dotMode);
+					final IEntityImage img = maker.getImage();
 					g.overrideImage(img, g.getGroupType() == GroupType.CONCURRENT_STATE ? LeafType.STATE_CONCURRENT
 							: LeafType.STATE);
 
@@ -106,11 +103,6 @@ public final class CucaDiagramSimplifierState {
 			result.add(0, g);
 
 		return result;
-	}
-
-	private IEntityImage computeImage(Entity g) throws IOException, InterruptedException {
-		final GroupMakerState maker = new GroupMakerState(diagram, g, stringBounder);
-		return maker.getImage();
 	}
 
 }

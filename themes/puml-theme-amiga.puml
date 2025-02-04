@@ -1,9 +1,15 @@
-''
-'' A white on blue theme based on Amiga Workbench 1.x
-'' https://en.wikipedia.org/wiki/Workbench_(AmigaOS)#Workbench_1.x
-''
-'' Original Author: Matthew Leather
-''
+---
+name: amiga
+display_name: Amiga Workbench 1.x
+description: A white on blue theme based on Amiga Workbench 1.x
+author: Matthew Leather
+release: 
+license: 
+version: 
+source: 
+origin: 
+inspiration: https://en.wikipedia.org/wiki/Workbench_(AmigaOS)#Workbench_1.x
+---
 
 !$THEME = "amiga"
 

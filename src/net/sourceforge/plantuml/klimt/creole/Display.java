@@ -46,6 +46,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.sourceforge.plantuml.abel.Entity;
+import net.sourceforge.plantuml.jaws.Jaws;
+import net.sourceforge.plantuml.jaws.JawsFlags;
+import net.sourceforge.plantuml.jaws.JawsStrange;
 import net.sourceforge.plantuml.klimt.LineBreakStrategy;
 import net.sourceforge.plantuml.klimt.UStroke;
 import net.sourceforge.plantuml.klimt.color.HColor;
@@ -65,6 +68,8 @@ import net.sourceforge.plantuml.regex.Matcher2;
 import net.sourceforge.plantuml.regex.MyPattern;
 import net.sourceforge.plantuml.regex.Pattern2;
 import net.sourceforge.plantuml.sequencediagram.MessageNumber;
+import net.sourceforge.plantuml.skin.Pragma;
+import net.sourceforge.plantuml.skin.PragmaKey;
 import net.sourceforge.plantuml.skin.VisibilityModifier;
 import net.sourceforge.plantuml.stereo.Stereotype;
 import net.sourceforge.plantuml.style.ISkinSimple;
@@ -77,6 +82,8 @@ import net.sourceforge.plantuml.text.Guillemet;
 import net.sourceforge.plantuml.text.StringLocated;
 import net.sourceforge.plantuml.url.UrlBuilder;
 import net.sourceforge.plantuml.url.UrlMode;
+import net.sourceforge.plantuml.warning.JawsWarning;
+import net.sourceforge.plantuml.warning.Warning;
 
 public class Display implements Iterable<CharSequence> {
 
@@ -86,6 +93,10 @@ public class Display implements Iterable<CharSequence> {
 	private final CreoleMode defaultCreoleMode;
 	private final boolean showStereotype;
 
+	// Ideally, we should have implemented the Null Object Pattern from the start,
+	// but it was not incorporated. We are now gradually removing occurrences of
+	// <code>null</code> in the <code>Display</code> logic throughout our codebase.
+	// Reference: https://en.wikipedia.org/wiki/Null_object_pattern
 	public final static Display NULL = new Display(true, null, null, true, CreoleMode.FULL);
 
 	@Override
@@ -131,6 +142,7 @@ public class Display implements Iterable<CharSequence> {
 
 	}
 
+	@JawsStrange
 	public Display replaceBackslashT() {
 		final Display result = new Display(this.showStereotype, this, defaultCreoleMode);
 		for (int i = 0; i < result.displayData.size(); i++) {
@@ -199,16 +211,45 @@ public class Display implements Iterable<CharSequence> {
 	}
 
 	public static Display getWithNewlines(Quark<Entity> s) {
-		return getWithNewlines(s.getName());
+		return getWithNewlines(Pragma.createEmpty(), s.getName());
 	}
 
-	public static Display getWithNewlines2(String s) throws NoSuchColorException {
-		final Display result = getWithNewlines(s);
+	public static Display getWithNewlines2(Pragma pragma, String s) throws NoSuchColorException {
+		final Display result = getWithNewlines(pragma, s);
 		CreoleParser.checkColor(result);
 		return result;
 	}
 
-	public static Display getWithNewlines(String s) {
+	public static List<String> getWithNewlines3(CharSequence s) {
+		if (s == null)
+			return null;
+
+		final List<String> result = new ArrayList<>();
+		final StringBuilder current = new StringBuilder();
+		for (int i = 0; i < s.length(); i++) {
+			final char c = s.charAt(i);
+			if (c == '\\' && i < s.length() - 1) {
+				final char c2 = s.charAt(i + 1);
+				i++;
+				if (c2 == 'n') {
+					result.add(current.toString());
+					current.setLength(0);
+				} else if (c2 == 't') {
+					current.append('\t');
+				} else if (c2 == '\\') {
+					current.append(c2);
+				}
+			} else {
+				current.append(c);
+			}
+		}
+		result.add(current.toString());
+		return Collections.unmodifiableList(result);
+	}
+
+	private final static Warning MORE_INFO = new Warning("More info on https://plantuml.com/newline");
+
+	public static Display getWithNewlines(Pragma pragma, String s) {
 		if (s == null)
 			return NULL;
 
@@ -224,26 +265,66 @@ public class Display implements Iterable<CharSequence> {
 			else if (sub.startsWith("</math>") || sub.startsWith("</latex>") || sub.startsWith("]]"))
 				rawMode = false;
 
-			if (rawMode == false && c == '\\' && i < s.length() - 1) {
+			if (JawsFlags.SPECIAL_NEWLINE_IN_DISPLAY_CLASS && sub.startsWith("%newline()")) {
+				result.add(current.toString());
+				current.setLength(0);
+				i += 9;
+				// throw new IllegalStateException();
+			} else if (JawsFlags.SPECIAL_NEWLINE_IN_DISPLAY_CLASS && sub.startsWith("%n()")) {
+				result.add(current.toString());
+				current.setLength(0);
+				i += 3;
+				// throw new IllegalStateException();
+			} else if (Pragma.legacyReplaceBackslashNByNewline() && rawMode == false && c == '\\'
+					&& i < s.length() - 1) {
 				final char c2 = s.charAt(i + 1);
 				i++;
 				if (c2 == 'n' || c2 == 'r' || c2 == 'l') {
-					if (c2 == 'r')
+					if (c2 == 'r') {
 						naturalHorizontalAlignment = HorizontalAlignment.RIGHT;
-					else if (c2 == 'l')
+						addWarning(pragma, JawsWarning.BACKSLASH_RIGHT);
+					} else if (c2 == 'l') {
 						naturalHorizontalAlignment = HorizontalAlignment.LEFT;
+						addWarning(pragma, JawsWarning.BACKSLASH_LEFT);
+					} else {
+						addWarning(pragma, JawsWarning.BACKSLASH_NEWLINE);
+					}
 
 					result.add(current.toString());
 					current.setLength(0);
 				} else if (c2 == 't') {
 					current.append('\t');
+					addWarning(pragma, JawsWarning.BACKSLASH_TABULATION);
 				} else if (c2 == '\\') {
 					current.append(c2);
+					addWarning(pragma, JawsWarning.BACKSLASH_BACKSLASH);
 				} else {
 					current.append(c);
 					current.append(c2);
 				}
-			} else if (c == BackSlash.hiddenNewLine()) {
+			} else if (c == Jaws.BLOCK_E1_REAL_TABULATION) {
+				// current.append('\t');
+				current.append(c);
+			} else if (c == Jaws.BLOCK_E1_REAL_BACKSLASH) {
+				current.append('\\');
+			} else if (c == Jaws.BLOCK_E1_NEWLINE_LEFT_ALIGN) {
+				naturalHorizontalAlignment = HorizontalAlignment.LEFT;
+				result.add(current.toString());
+				current.setLength(0);
+			} else if (c == Jaws.BLOCK_E1_INVISIBLE_QUOTE) {
+				// No thing to do, just ignore this character
+			} else if (c == Jaws.BLOCK_E1_NEWLINE_RIGHT_ALIGN) {
+				naturalHorizontalAlignment = HorizontalAlignment.RIGHT;
+				result.add(current.toString());
+				current.setLength(0);
+			} else if (rawMode == false && c == Jaws.BLOCK_E1_NEWLINE) {
+				result.add(current.toString());
+				current.setLength(0);
+			} else if (c == Jaws.BLOCK_E1_BREAKLINE) {
+				// Because of embedded diagrams
+				result.add(current.toString());
+				current.setLength(0);
+			} else if (rawMode == false && c == BackSlash.hiddenNewLine()) {
 				result.add(current.toString());
 				current.setLength(0);
 			} else {
@@ -252,6 +333,13 @@ public class Display implements Iterable<CharSequence> {
 		}
 		result.add(current.toString());
 		return new Display(true, result, naturalHorizontalAlignment, false, CreoleMode.FULL);
+	}
+
+	private static void addWarning(Pragma pragma, JawsWarning warning) {
+		if (pragma.isTrue(PragmaKey.SHOW_DEPRECATION)) {
+			pragma.addWarning(MORE_INFO);
+			pragma.addWarning(warning.toWarning());
+		}
 	}
 
 	private Display(boolean showStereotype, Display other, CreoleMode mode) {
@@ -352,12 +440,12 @@ public class Display implements Iterable<CharSequence> {
 		return this;
 	}
 
-	public final static Pattern2 patternStereotype = MyPattern.cmpile("^(.*?)(?:\\<\\<\\s*(.*)\\s*\\>\\>)\\s*$");
+	public final static Pattern2 patternStereotype = MyPattern.cmpile("^(.*?)(\\<\\<\\s*(.*)\\s*\\>\\>)\\s*$");
 
-	public String getEndingStereotype() {
+	public Stereotype getEndingStereotype() {
 		final Matcher2 m = patternStereotype.matcher(displayData.get(displayData.size() - 1));
 		if (m.matches())
-			return m.group(2);
+			return Stereotype.build(m.group(2));
 
 		return null;
 	}
@@ -460,18 +548,10 @@ public class Display implements Iterable<CharSequence> {
 	}
 
 	public List<? extends CharSequence> asList() {
+		if (displayData == null)
+			return Collections.emptyList();
 		return Collections.unmodifiableList(displayData);
 	}
-
-//	public List<StringLocated> as2() {
-//		final List<StringLocated> result = new ArrayList<>();
-//		LineLocationImpl location = new LineLocationImpl("inner", null);
-//		for (CharSequence cs : displayData) {
-//			location = location.oneLineRead();
-//			result.add(new StringLocated(cs.toString(), location));
-//		}
-//		return Collections.unmodifiableList(result);
-//	}
 
 	public boolean hasUrl() {
 		final UrlBuilder urlBuilder = new UrlBuilder(null, UrlMode.ANYWHERE);
@@ -506,6 +586,12 @@ public class Display implements Iterable<CharSequence> {
 			}
 		}
 		return Collections.unmodifiableList(result);
+	}
+
+	public String toTooltipText() {
+		if (size() == 0)
+			return "";
+		return get(0).toString();
 	}
 
 	// ------
@@ -619,8 +705,13 @@ public class Display implements Iterable<CharSequence> {
 		return hasSeveralGuideLines(displayData);
 	}
 
+	@JawsStrange
 	public static boolean hasSeveralGuideLines(String s) {
-		final List<String> splitted = Arrays.asList(s.split("\\\\n"));
+		final List<String> splitted;
+		if (Pragma.legacyReplaceBackslashNByNewline())
+			splitted = Arrays.asList(s.split("\\\\n"));
+		else
+			splitted = Arrays.asList(s.split("" + Jaws.BLOCK_E1_NEWLINE));
 		return hasSeveralGuideLines(splitted);
 	}
 

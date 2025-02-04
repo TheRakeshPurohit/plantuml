@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import net.sourceforge.plantuml.annotation.DuplicateCode;
 import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.Style;
 import net.sourceforge.plantuml.style.StyleBuilder;
@@ -53,7 +54,8 @@ public class StyleExtractor {
 	private final List<StringLocated> style = new ArrayList<>();
 	private String title = null;
 	private boolean handwritten = false;
-	private double scale = 1;
+	private String scale = null;
+	private String newSkin;
 
 	public StyleExtractor(Iterator<StringLocated> data) {
 		while (data.hasNext()) {
@@ -68,23 +70,19 @@ public class StyleExtractor {
 						break;
 					line = data.next();
 				}
-			} else if (list.size() >= 1 && s.startsWith("!assume ")) {
+			} else if (list.size() <= 1 && s.startsWith("!assume ")) {
 				// Ignore
-			} else if (list.size() >= 1 && s.startsWith("!pragma ")) {
+			} else if (list.size() <= 1 && s.startsWith("!pragma ")) {
 				// Ignore
-			} else if (list.size() >= 1 && s.startsWith("hide ")) {
+			} else if (list.size() <= 1 && s.startsWith("hide ")) {
 				// Ignore
-			} else if (list.size() >= 1 && s.startsWith("scale ")) {
-				// Ignore
-				try {
-					final double v = Double.parseDouble(s.replaceAll("\\D", ""));
-					if (v > 0)
-						scale = v;
-				} catch (Exception e) {
-				}
-			} else if (list.size() >= 1 && s.startsWith("title ")) {
+			} else if (list.size() <= 1 && s.startsWith("scale ")) {
+				this.scale = s;
+			} else if (list.size() <= 1 && s.startsWith("title ")) {
 				this.title = s.substring("title ".length()).trim();
-			} else if (list.size() >= 1 && s.startsWith("skinparam ")) {
+			} else if (list.size() <= 1 && s.startsWith("skin ")) {
+				this.newSkin = s.substring("skin ".length()).trim();
+			} else if (list.size() <= 1 && s.startsWith("skinparam ")) {
 				if (s.contains("handwritten") && s.contains("true"))
 					handwritten = true;
 				if (s.contains("{")) {
@@ -109,7 +107,13 @@ public class StyleExtractor {
 		return line.getString().trim().equals("</style>");
 	}
 
+	@DuplicateCode(reference = "TitledDiagram")
 	public void applyStyles(ISkinParam skinParam) throws StyleParsingException {
+		if (newSkin != null) {
+			final String filename = newSkin + ".skin";
+			skinParam.setDefaultSkin(filename);
+		}
+
 		if (style.size() > 0) {
 			final StyleBuilder styleBuilder = skinParam.getCurrentStyleBuilder();
 			final BlocLines blocLines = BlocLines.from(style);
@@ -130,7 +134,7 @@ public class StyleExtractor {
 		return handwritten;
 	}
 
-	public double getScale() {
+	public String getScale() {
 		return scale;
 	}
 

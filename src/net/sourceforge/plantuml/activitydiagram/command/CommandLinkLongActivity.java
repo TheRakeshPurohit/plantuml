@@ -48,10 +48,12 @@ import net.sourceforge.plantuml.classdiagram.command.CommandLinkClass;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.command.CommandMultilines2;
 import net.sourceforge.plantuml.command.MultilinesStrategy;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.Trim;
 import net.sourceforge.plantuml.decoration.LinkDecor;
 import net.sourceforge.plantuml.decoration.LinkType;
 import net.sourceforge.plantuml.descdiagram.command.CommandLinkElement;
+import net.sourceforge.plantuml.jaws.Jaws;
 import net.sourceforge.plantuml.klimt.color.ColorType;
 import net.sourceforge.plantuml.klimt.color.NoSuchColorException;
 import net.sourceforge.plantuml.klimt.creole.Display;
@@ -114,7 +116,7 @@ public class CommandLinkLongActivity extends CommandMultilines2<ActivityDiagram>
 	}
 
 	@Override
-	protected CommandExecutionResult executeNow(final ActivityDiagram diagram, BlocLines lines)
+	protected CommandExecutionResult executeNow(final ActivityDiagram diagram, BlocLines lines, ParserPass currentPass)
 			throws NoSuchColorException {
 		lines = lines.trim();
 		final RegexResult line0 = getStartingPattern().matcher(lines.getFirst().getTrimmed().getString());
@@ -139,7 +141,7 @@ public class CommandLinkLongActivity extends CommandMultilines2<ActivityDiagram>
 			urlActivity = extractUrlString(diagram, desc0);
 			if (urlActivity == null) {
 				sb.append(desc0);
-				sb.append(BackSlash.BS_BS_N);
+				sb.append(Jaws.BLOCK_E1_NEWLINE);
 			}
 		}
 		int i = 0;
@@ -153,21 +155,21 @@ public class CommandLinkLongActivity extends CommandMultilines2<ActivityDiagram>
 			}
 			sb.append(cs.getString());
 			if (i < lines.size() - 2)
-				sb.append(BackSlash.BS_BS_N);
+				sb.append(Jaws.BLOCK_E1_NEWLINE);
 
 		}
 
 		final List<String> lineLast = StringUtils.getSplit(MyPattern.cmpile(getPatternEnd()),
 				lines.getLast().getString());
 		if (StringUtils.isNotEmpty(lineLast.get(0))) {
-			if (sb.length() > 0 && sb.toString().endsWith(BackSlash.BS_BS_N) == false)
-				sb.append(BackSlash.BS_BS_N);
+			if (sb.length() > 0 && sb.toString().endsWith("" + Jaws.BLOCK_E1_NEWLINE) == false)
+				sb.append(Jaws.BLOCK_E1_NEWLINE);
 
 			sb.append(lineLast.get(0));
 		}
 
-		final String display = sb.toString();
-		final String idShort = lineLast.get(1) == null ? display : lineLast.get(1);
+		final String displayString = sb.toString();
+		final String idShort = lineLast.get(1) == null ? displayString : lineLast.get(1);
 
 		String partition = null;
 		if (lineLast.get(3) != null) {
@@ -176,13 +178,13 @@ public class CommandLinkLongActivity extends CommandMultilines2<ActivityDiagram>
 		}
 		if (partition != null) {
 			final Quark<Entity> idNewLong = diagram.quarkInContext(true, diagram.cleanId(partition));
-			diagram.gotoGroup(idNewLong, Display.getWithNewlines(partition), GroupType.PACKAGE);
+			diagram.gotoGroup(idNewLong, Display.getWithNewlines(diagram.getPragma(), partition), GroupType.PACKAGE);
 		}
 		final Quark<Entity> ident = diagram.quarkInContext(true, diagram.cleanId(idShort));
 
 		Entity entity2 = ident.getData();
 		if (entity2 == null)
-			entity2 = diagram.reallyCreateLeaf(ident, Display.getWithNewlines(display), LeafType.ACTIVITY, null);
+			entity2 = diagram.reallyCreateLeaf(ident, Display.getWithNewlines(diagram.getPragma(), displayString), LeafType.ACTIVITY, null);
 
 		diagram.setLastEntityConsulted(entity2);
 
@@ -208,15 +210,14 @@ public class CommandLinkLongActivity extends CommandMultilines2<ActivityDiagram>
 
 		final int lenght = arrow.length() - 1;
 
-		final Display linkLabel = Display.getWithNewlines(line0.get("BRACKET", 0));
+		final Display linkLabel = Display.getWithNewlines(diagram.getPragma(), line0.get("BRACKET", 0));
 
 		LinkType type = new LinkType(LinkDecor.ARROW, LinkDecor.NONE);
 		if (arrow.contains("."))
 			type = type.goDotted();
 
 		final LinkArg linkArg = LinkArg.build(linkLabel, lenght, diagram.getSkinParam().classAttributeIconSize() > 0);
-		Link link = new Link(diagram.getEntityFactory(), diagram.getSkinParam().getCurrentStyleBuilder(), entity1,
-				entity2, type, linkArg);
+		Link link = new Link(diagram, diagram.getSkinParam().getCurrentStyleBuilder(), entity1, entity2, type, linkArg);
 		final Direction direction = StringUtils.getArrowDirection(arrowBody1 + arrowDirection + arrowBody2 + ">");
 		if (direction == Direction.LEFT || direction == Direction.UP)
 			link = link.getInv();

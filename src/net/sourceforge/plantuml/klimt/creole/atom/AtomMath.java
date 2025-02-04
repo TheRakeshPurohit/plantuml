@@ -42,6 +42,7 @@ import net.sourceforge.plantuml.klimt.color.ColorMapper;
 import net.sourceforge.plantuml.klimt.color.HColor;
 import net.sourceforge.plantuml.klimt.color.HColorSimple;
 import net.sourceforge.plantuml.klimt.drawing.UGraphic;
+import net.sourceforge.plantuml.klimt.drawing.debug.StringBounderDebug;
 import net.sourceforge.plantuml.klimt.font.StringBounder;
 import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 import net.sourceforge.plantuml.klimt.shape.UImage;
@@ -62,6 +63,9 @@ public class AtomMath extends AbstractAtom implements Atom {
 	}
 
 	private XDimension2D calculateDimensionSlow(StringBounder stringBounder) {
+		if (stringBounder.matchesProperty("TIKZ")) {
+			return stringBounder.calculateDimension(null, math.getSource());
+		}
 		final BufferedImage image = math.getImage(Color.BLACK, Color.WHITE).withScale(1).getImage();
 		return new XDimension2D(image.getWidth(), image.getHeight());
 	}
@@ -69,6 +73,9 @@ public class AtomMath extends AbstractAtom implements Atom {
 	private XDimension2D dim;
 
 	public XDimension2D calculateDimension(StringBounder stringBounder) {
+		if (stringBounder instanceof StringBounderDebug) {
+			return calculateDimensionSlow(stringBounder);
+		}
 		if (dim == null) {
 			dim = calculateDimensionSlow(stringBounder);
 		}
@@ -94,7 +101,7 @@ public class AtomMath extends AbstractAtom implements Atom {
 			final UImageSvg svg = math.getSvg(1, fore, back);
 			ug.draw(svg);
 		} else {
-			final UImage image = new UImage(math.getImage(fore, back)).withFormula(math.getFormula());
+			final UImage image = new UImage(math.getImage(fore, back)).withFormula(math.getSource());
 			ug.draw(image);
 		}
 	}

@@ -111,6 +111,13 @@ public abstract class AbstractMessage extends AbstractEvent implements EventWith
 		return parallel;
 	}
 
+	public boolean isParallelWith(AbstractMessage message) {
+		boolean hasParallelBrother = parallelBrother != null;
+		return (this == message)
+				|| (hasParallelBrother && parallelBrother == message)
+				|| (hasParallelBrother && parallelBrother.isParallelWith(message));
+	}
+
 	final public Url getUrl() {
 		if (url == null)
 			for (Note n : noteOnMessages)
@@ -136,6 +143,12 @@ public abstract class AbstractMessage extends AbstractEvent implements EventWith
 
 	public final boolean addLifeEvent(LifeEvent lifeEvent) {
 		lifeEvent.setMessage(this);
+
+		if (this.isSelfMessage()) {
+			if (lifeEvent.getParticipant() != this.getParticipant1())
+				return true;
+		}
+
 		lifeEventsType.add(lifeEvent.getType());
 		if (lifeEventsType.size() == 1 && isActivate())
 			firstIsActivate = true;

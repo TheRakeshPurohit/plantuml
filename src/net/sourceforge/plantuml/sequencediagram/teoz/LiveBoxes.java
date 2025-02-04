@@ -102,22 +102,39 @@ public class LiveBoxes {
 					level++;
 
 				if (le.getParticipant() == p && le.isDeactivateOrDestroy())
-					level--;
+					level = Math.max(0,level - 1);
 
 			}
 			if (event == current) {
 				if (current instanceof AbstractMessage) {
-					final Event next = nextButSkippingNotes(it);
-					if (next instanceof LifeEvent) {
+					boolean seenActivate = false;
+					boolean seenDeactivate = false;
+					while (it.hasNext()) {
+						final Event next = nextButSkippingNotes(it);
+						if (!(next instanceof LifeEvent || next instanceof AbstractMessage)) break;
+						if (!(next instanceof LifeEvent)) continue;
+
 						final LifeEvent le = (LifeEvent) next;
 						final AbstractMessage msg = (AbstractMessage) current;
+
+						final boolean sameMessage = msg == le.getMessage()
+								|| (le.getMessage() != null && le.getMessage().isParallelWith(msg));
+						if (!sameMessage)
+							continue;
+
 						if (mode != EventsHistoryMode.IGNORE_FUTURE_ACTIVATE && le.isActivate() && msg.dealWith(p)
-								&& le.getParticipant() == p)
+								&& le.getParticipant() == p) {
+							seenActivate = true;
+							if (seenDeactivate) break;
 							level++;
+						}
 
 						if (mode == EventsHistoryMode.CONSIDERE_FUTURE_DEACTIVATE && le.isDeactivateOrDestroy()
-								&& msg.dealWith(p) && le.getParticipant() == p)
-							level--;
+								&& msg.dealWith(p) && le.getParticipant() == p) {
+							seenDeactivate = true;
+							if (seenActivate) break;
+							level = Math.max(0,level - 1);
+						}
 
 						// System.err.println("Warning, this is message " + current + " next=" + next);
 					}
@@ -165,13 +182,13 @@ public class LiveBoxes {
 				continue;
 
 			if (current instanceof Message || current instanceof MessageExo) {
-				final Event next = nextButSkippingNotes(it);
-				if (next instanceof LifeEvent) {
+				Event next = nextButSkippingNotes(it);
+				while (next instanceof LifeEvent && ((LifeEvent) next).getMessage() ==current) {
 					final LifeEvent le = (LifeEvent) next;
-					if (le.isActivate())
+					if (le.isActivate() && le.getParticipant() == p)
 						return le.getSpecificColors();
 
-					return null;
+					next = nextButSkippingNotes(it);
 				}
 			}
 			return null;
@@ -196,9 +213,48 @@ public class LiveBoxes {
 	public Stairs getStairs(double createY, double totalHeight) {
 		final Stairs stair = new Stairs();
 		int indent = 0;
+		AbstractMessage lastMessage = null;
+		Double position = null;
+		boolean seenActivate = false;
+		boolean seenDeactivate = false;
 		for (Event event : events) {
-			final Double position = eventsStep.get(event);
-			if (position != null) {
+			if (event instanceof Note) {
+				// This would be a participant positioned Note, not a Message based Note
+				lastMessage = null;
+				seenActivate = false;
+				seenDeactivate = false;
+			}
+
+			final Double potentialPosition = eventsStep.get(event);
+
+			if (position == null || lastMessage == null)
+				position = potentialPosition;
+			else if (event instanceof LifeEvent) { // && event.dealWith(p)) {
+				LifeEvent le = (LifeEvent) event;
+				if (le.dealWith(p)) {
+					if (le.getMessage() == null || !(le.getMessage().isParallelWith(lastMessage))) {
+						position = potentialPosition;
+					} else if ((le.isActivate() && seenDeactivate) || (le.isDeactivate() && seenActivate)) {
+						position = potentialPosition;
+					}
+					seenActivate |= le.isActivate();
+					seenDeactivate |= le.isDeactivate();
+				} else
+						continue;
+			} else
+				position = potentialPosition;
+
+			if (event instanceof AbstractMessage) {
+				if (((AbstractMessage) event).isParallelWith(lastMessage))
+					continue;
+			  else {
+					seenActivate = false;
+					seenDeactivate = false;
+					lastMessage = (AbstractMessage) event;
+				}
+			}
+
+			if (position != null ) {
 				assert position <= totalHeight : "position=" + position + " totalHeight=" + totalHeight;
 				indent = getLevelAt(event, EventsHistoryMode.CONSIDERE_FUTURE_DEACTIVATE);
 				final Fashion activateColor = getActivateColor(event);

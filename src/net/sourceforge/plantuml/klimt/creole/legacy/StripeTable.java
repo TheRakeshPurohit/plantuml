@@ -40,6 +40,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import net.sourceforge.plantuml.jaws.Jaws;
+import net.sourceforge.plantuml.jaws.JawsStrange;
 import net.sourceforge.plantuml.klimt.LineBreakStrategy;
 import net.sourceforge.plantuml.klimt.color.HColor;
 import net.sourceforge.plantuml.klimt.creole.CreoleContext;
@@ -54,6 +56,7 @@ import net.sourceforge.plantuml.klimt.creole.atom.AtomTable;
 import net.sourceforge.plantuml.klimt.creole.atom.AtomWithMargin;
 import net.sourceforge.plantuml.klimt.font.FontConfiguration;
 import net.sourceforge.plantuml.klimt.geom.HorizontalAlignment;
+import net.sourceforge.plantuml.skin.Pragma;
 import net.sourceforge.plantuml.style.ISkinSimple;
 import net.sourceforge.plantuml.text.BackSlash;
 
@@ -123,6 +126,7 @@ public class StripeTable implements Stripe {
 
 	private static final String hiddenBar = "\uE000";
 
+	@JawsStrange
 	private void analyzeAndAddInternal(String line) {
 		line = line.replace("\\|", hiddenBar);
 		HColor lineBackColor = getBackOrFrontColor(line, 0);
@@ -157,31 +161,46 @@ public class StripeTable implements Stripe {
 		}
 	}
 
+	@JawsStrange
 	static List<String> getWithNewlinesInternal(String s) {
 		final List<String> result = new ArrayList<>();
-		final StringBuilder current = new StringBuilder();
-		for (int i = 0; i < s.length(); i++) {
-			final char c = s.charAt(i);
-			if (c == '\\' && i < s.length() - 1) {
-				final char c2 = s.charAt(i + 1);
-				i++;
-				if (c2 == 'n') {
+		if (Pragma.legacyReplaceBackslashNByNewline()) {
+			final StringBuilder current = new StringBuilder();
+			for (int i = 0; i < s.length(); i++) {
+				final char c = s.charAt(i);
+				if (c == '\\' && i < s.length() - 1) {
+					final char c2 = s.charAt(i + 1);
+					i++;
+					if (c2 == 'n') {
+						result.add(current.toString());
+						current.setLength(0);
+					} else if (c2 == '\\') {
+						current.append(c2);
+					} else {
+						current.append(c);
+						current.append(c2);
+					}
+				} else if (c == BackSlash.hiddenNewLine()) {
 					result.add(current.toString());
 					current.setLength(0);
-				} else if (c2 == '\\') {
-					current.append(c2);
 				} else {
 					current.append(c);
-					current.append(c2);
 				}
-			} else if (c == BackSlash.hiddenNewLine()) {
-				result.add(current.toString());
-				current.setLength(0);
-			} else {
-				current.append(c);
 			}
+			result.add(current.toString());
+		} else {
+			final StringBuilder current = new StringBuilder();
+			for (int i = 0; i < s.length(); i++) {
+				final char c = s.charAt(i);
+				if (c == Jaws.BLOCK_E1_NEWLINE) {
+					result.add(current.toString());
+					current.setLength(0);
+				} else {
+					current.append(c);
+				}
+			}
+			result.add(current.toString());
 		}
-		result.add(current.toString());
 		return result;
 	}
 

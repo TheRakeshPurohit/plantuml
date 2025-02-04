@@ -100,7 +100,7 @@ public class CommandPackage extends SingleLineCommand2<AbstractEntityDiagram> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(AbstractEntityDiagram diagram, LineLocation location, RegexResult arg)
+	protected CommandExecutionResult executeArg(AbstractEntityDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass)
 			throws NoSuchColorException {
 		String idShort;
 		String display;
@@ -108,7 +108,7 @@ public class CommandPackage extends SingleLineCommand2<AbstractEntityDiagram> {
 
 		if (arg.get("AS", 0) == null) {
 			if (name.length() == 0) {
-				idShort = "##" + diagram.getUniqueSequence();
+				idShort = "##" + diagram.getUniqueSequence("");
 				display = null;
 				return CommandExecutionResult.error("Error in name");
 				// throw new IllegalStateException("AS");
@@ -130,24 +130,20 @@ public class CommandPackage extends SingleLineCommand2<AbstractEntityDiagram> {
 			display = name;
 		}
 
-		final CommandExecutionResult status = diagram.gotoGroup(quark, Display.getWithNewlines(display),
-				GroupType.PACKAGE);
+		final String stereotype = arg.get("STEREOTYPE", 0);
+		final USymbol usymbol = USymbols.fromString(stereotype, diagram.getSkinParam().actorStyle(),
+				diagram.getSkinParam().componentStyle(), diagram.getSkinParam().packageStyle());
+		
+		final CommandExecutionResult status = diagram.gotoGroup(quark, Display.getWithNewlines(diagram.getPragma(), display),
+				GroupType.PACKAGE, usymbol);
 		if (status.isOk() == false)
 			return status;
 
 		final Entity p = diagram.getCurrentGroup();
 
-		final String stereotype = arg.get("STEREOTYPE", 0);
+		if (stereotype != null && usymbol == null)
+			p.setStereotype(Stereotype.build(stereotype));
 
-		if (stereotype != null) {
-			final USymbol usymbol = USymbols.fromString(stereotype, diagram.getSkinParam().actorStyle(),
-					diagram.getSkinParam().componentStyle(), diagram.getSkinParam().packageStyle());
-			if (usymbol == null)
-				p.setStereotype(Stereotype.build(stereotype));
-			else
-				p.setUSymbol(usymbol);
-
-		}
 		CommandCreateClassMultilines.addTags(p, arg.getLazzy("TAGS", 0));
 
 		final String urlString = arg.get("URL", 0);

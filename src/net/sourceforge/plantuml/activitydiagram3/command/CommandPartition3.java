@@ -39,6 +39,7 @@ import net.sourceforge.plantuml.StringUtils;
 import net.sourceforge.plantuml.activitydiagram3.ActivityDiagram3;
 import net.sourceforge.plantuml.activitydiagram3.ftile.vcompact.FtileGroup;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.decoration.symbol.USymbol;
 import net.sourceforge.plantuml.decoration.symbol.USymbols;
@@ -107,7 +108,7 @@ public class CommandPartition3 extends SingleLineCommand2<ActivityDiagram3> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(ActivityDiagram3 diagram, LineLocation location, RegexResult arg)
+	protected CommandExecutionResult executeArg(ActivityDiagram3 diagram, LineLocation location, RegexResult arg, ParserPass currentPass)
 			throws NoSuchColorException {
 		final String partitionTitle = StringUtils.eventuallyRemoveStartingAndEndingDoubleQuote(arg.get("NAME", 0));
 
@@ -131,7 +132,7 @@ public class CommandPartition3 extends SingleLineCommand2<ActivityDiagram3> {
 //		final HColor titleColor = HColors.BLUE;// stylePartition.value(PName.FontColor).asColor(diagram.getSkinParam().getIHtmlColorSet());
 //		final double roundCorner = stylePartition.value(PName.RoundCorner).asDouble();
 
-		diagram.startGroup(Display.getWithNewlines(partitionTitle), backColor, symbol, stylePartition);
+		diagram.startGroup(Display.getWithNewlines(diagram.getPragma(), partitionTitle), backColor, symbol, stylePartition);
 
 		return CommandExecutionResult.ok();
 	}

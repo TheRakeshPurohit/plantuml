@@ -39,30 +39,36 @@ public class Failable<O> {
 
 	private final O data;
 	private final String error;
+	private final int score;
 
 	public static <O> Failable<O> ok(O data) {
-		return new Failable<>(data, null);
+		return new Failable<>(data, null, 0);
 	}
 
 	public static <O> Failable<O> error(String error) {
-		return new Failable<>(null, error);
+		return new Failable<>(null, error, 0);
 	}
 
-	private Failable(O data, String error) {
-		if (data == null && error == null) {
+	public static <O> Failable<O> error(String error, int score) {
+		return new Failable<>(null, error, score);
+	}
+
+	private Failable(O data, String error, int score) {
+		if (data == null && error == null)
 			throw new IllegalArgumentException();
-		}
-		if (data != null && error != null) {
+
+		if (data != null && error != null)
 			throw new IllegalArgumentException();
-		}
+
 		this.data = data;
 		this.error = error;
+		this.score = score;
 	}
 
 	public O get() {
-		if (data == null) {
+		if (data == null)
 			throw new IllegalStateException();
-		}
+
 		return data;
 	}
 
@@ -71,10 +77,18 @@ public class Failable<O> {
 	}
 
 	public String getError() {
-		if (error == null) {
+		if (error == null)
 			throw new IllegalStateException();
-		}
+
 		return error;
 	}
+
+	public int getScore() {
+		if (error == null)
+			throw new IllegalStateException();
+		
+		return score;
+	}
+
 
 }

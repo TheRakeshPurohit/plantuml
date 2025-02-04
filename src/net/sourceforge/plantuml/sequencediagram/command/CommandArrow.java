@@ -43,6 +43,7 @@ import java.util.StringTokenizer;
 import net.sourceforge.plantuml.StringUtils;
 import net.sourceforge.plantuml.classdiagram.command.CommandLinkClass;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.descdiagram.command.CommandLinkElement;
 import net.sourceforge.plantuml.klimt.color.HColor;
@@ -155,16 +156,16 @@ public class CommandArrow extends SingleLineCommand2<SequenceDiagram> {
 		final Display display;
 		if (arg2.get(n + "CODE", 0) != null) {
 			code = arg2.get(n + "CODE", 0);
-			display = Display.getWithNewlines(code);
+			display = Display.getWithNewlines(system.getPragma(), code);
 		} else if (arg2.get(n + "LONG", 0) != null) {
 			code = arg2.get(n + "LONG", 0);
-			display = Display.getWithNewlines(code);
+			display = Display.getWithNewlines(system.getPragma(), code);
 		} else if (arg2.get(n + "LONGCODE", 0) != null) {
-			display = Display.getWithNewlines(arg2.get(n + "LONGCODE", 0));
+			display = Display.getWithNewlines(system.getPragma(), arg2.get(n + "LONGCODE", 0));
 			code = arg2.get(n + "LONGCODE", 1);
 		} else if (arg2.get(n + "CODELONG", 0) != null) {
 			code = arg2.get(n + "CODELONG", 0);
-			display = Display.getWithNewlines(arg2.get(n + "CODELONG", 1));
+			display = Display.getWithNewlines(system.getPragma(), arg2.get(n + "CODELONG", 1));
 			return system.getOrCreateParticipant(code, display);
 		} else {
 			throw new IllegalStateException();
@@ -200,41 +201,53 @@ public class CommandArrow extends SingleLineCommand2<SequenceDiagram> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(SequenceDiagram diagram, LineLocation location, RegexResult arg)
+	protected CommandExecutionResult executeArg(SequenceDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass)
 			throws NoSuchColorException {
-
-		Participant p1;
-		Participant p2;
 
 		final String dressing1 = getDressing(arg, "ARROW_DRESSING1");
 		final String dressing2 = getDressing(arg, "ARROW_DRESSING2");
 		final int inclination1 = getInclination(arg.get("ARROW_DRESSING1", 0));
 		final int inclination2 = getInclination(arg.get("ARROW_DRESSING2", 0));
 
+		// Sorry, this code is note very clear
+		final boolean hasDressing1butx = contains(dressing1, "<", "\\", "/");
+		final boolean xInDressing1 = dressing1.contains("x");
+		final boolean hasDressing2butx = contains(dressing2, ">", "\\", "/");
+		final boolean xInDressing2 = dressing2.contains("x");
+		final boolean reverseDefine;
+		if (hasDressing2butx || (xInDressing1 && xInDressing2))
+			reverseDefine = false;
+		else if (hasDressing1butx)
+			reverseDefine = true;
+		else if (xInDressing1 || xInDressing2)
+			reverseDefine = false;
+		else
+			return CommandExecutionResult.error("Illegal sequence arrow");
+
+		final Participant p1;
+		final Participant p2;
 		final boolean circleAtStart;
 		final boolean circleAtEnd;
-
-		final boolean hasDressing2 = contains(dressing2, ">", "\\", "/", "x");
-		final boolean hasDressing1 = contains(dressing1, "x", "<", "\\", "/");
-		final boolean reverseDefine;
-		if (hasDressing2) {
-			p1 = getOrCreateParticipant(diagram, arg, "PART1");
-			p2 = getOrCreateParticipant(diagram, arg, "PART2");
-			circleAtStart = dressing1.contains("o");
-			circleAtEnd = dressing2.contains("o");
-			reverseDefine = false;
-		} else if (hasDressing1) {
+		final boolean sync1;
+		final boolean sync2;
+		if (reverseDefine) {
+			// Keep the order
+			// See https://github.com/plantuml/plantuml/issues/1819#issuecomment-2158524871
 			p2 = getOrCreateParticipant(diagram, arg, "PART1");
 			p1 = getOrCreateParticipant(diagram, arg, "PART2");
 			circleAtStart = dressing2.contains("o");
 			circleAtEnd = dressing1.contains("o");
-			reverseDefine = true;
+			sync2 = contains(dressing1, "<<", "\\\\", "//");
+			sync1 = contains(dressing2, ">>", "\\\\", "//");
 		} else {
-			return CommandExecutionResult.error("Illegal sequence arrow");
-
+			p1 = getOrCreateParticipant(diagram, arg, "PART1");
+			p2 = getOrCreateParticipant(diagram, arg, "PART2");
+			circleAtStart = dressing1.contains("o");
+			circleAtEnd = dressing2.contains("o");
+			sync1 = contains(dressing1, "<<", "\\\\", "//");
+			sync2 = contains(dressing2, ">>", "\\\\", "//");
 		}
 
-		final boolean sync = contains(dressing1, "<<", "\\\\", "//") || contains(dressing2, ">>", "\\\\", "//");
 
 		final boolean dotted = getLength(arg) > 1;
 
@@ -244,16 +257,18 @@ public class CommandArrow extends SingleLineCommand2<SequenceDiagram> {
 		} else {
 			// final String message = UrlBuilder.multilineTooltip(arg.get("MESSAGE", 0));
 			final String message = arg.get("MESSAGE", 0);
-			labels = Display.getWithNewlines(message);
+			labels = Display.getWithNewlines(diagram.getPragma(), message);
 		}
 
-		ArrowConfiguration config = hasDressing1 && hasDressing2 ? ArrowConfiguration.withDirectionBoth()
+		ArrowConfiguration config = hasDressing1butx && hasDressing2butx ? ArrowConfiguration.withDirectionBoth()
 				: ArrowConfiguration.withDirectionNormal();
 		if (dotted)
 			config = config.withBody(ArrowBody.DOTTED);
 
-		if (sync)
-			config = config.withHead(ArrowHead.ASYNC);
+		if (sync1)
+			config = config.withHead1(ArrowHead.ASYNC);
+		if (sync2)
+			config = config.withHead2(ArrowHead.ASYNC);
 
 		if (dressing2.contains("\\") || dressing1.contains("/"))
 			config = config.withPart(ArrowPart.TOP_PART);
@@ -268,17 +283,17 @@ public class CommandArrow extends SingleLineCommand2<SequenceDiagram> {
 			config = config.withDecoration1(ArrowDecoration.CIRCLE);
 
 		if (reverseDefine) {
-			if (dressing1.contains("x"))
+			if (xInDressing1)
 				config = config.withHead2(ArrowHead.CROSSX);
 
-			if (dressing2.contains("x"))
+			if (xInDressing2)
 				config = config.withHead1(ArrowHead.CROSSX);
 
 		} else {
-			if (dressing1.contains("x"))
+			if (xInDressing1)
 				config = config.withHead1(ArrowHead.CROSSX);
 
-			if (dressing2.contains("x"))
+			if (xInDressing2)
 				config = config.withHead2(ArrowHead.CROSSX);
 
 		}

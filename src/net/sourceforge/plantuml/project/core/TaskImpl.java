@@ -54,6 +54,7 @@ import net.sourceforge.plantuml.project.solver.Solver;
 import net.sourceforge.plantuml.project.solver.SolverImpl;
 import net.sourceforge.plantuml.project.time.Day;
 import net.sourceforge.plantuml.project.time.DayOfWeek;
+import net.sourceforge.plantuml.stereo.Stereotype;
 import net.sourceforge.plantuml.style.StyleBuilder;
 import net.sourceforge.plantuml.url.Url;
 
@@ -68,6 +69,7 @@ public class TaskImpl extends AbstractTask implements Task, LoadPlanable {
 
 	private int completion;
 	private Display note;
+	private Stereotype noteStereotype;
 
 	private Url url;
 	private CenterBorderColor[] colors;
@@ -185,7 +187,7 @@ public class TaskImpl extends AbstractTask implements Task, LoadPlanable {
 
 	public String getPrettyDisplay() {
 		if (resources.size() > 0) {
-			final StringBuilder result = new StringBuilder(getCode().getSimpleDisplay());
+			final StringBuilder result = new StringBuilder(getCode().getDisplay());
 			result.append(" ");
 			for (Iterator<Map.Entry<Resource, Integer>> it = resources.entrySet().iterator(); it.hasNext();) {
 				final Map.Entry<Resource, Integer> ent = it.next();
@@ -202,7 +204,7 @@ public class TaskImpl extends AbstractTask implements Task, LoadPlanable {
 			}
 			return result.toString();
 		}
-		return getCode().getSimpleDisplay();
+		return getCode().getDisplay();
 	}
 
 	@Override
@@ -310,12 +312,17 @@ public class TaskImpl extends AbstractTask implements Task, LoadPlanable {
 	}
 
 	@Override
-	public void setNote(Display note) {
+	public void setNote(Display note, Stereotype stereotype) {
 		this.note = note;
+		this.noteStereotype = stereotype;
 	}
 
 	public Display getNote() {
 		return note;
+	}
+
+	public Stereotype getNoteStereotype() {
+		return noteStereotype;
 	}
 
 	public LoadPlanable getDefaultPlan() {

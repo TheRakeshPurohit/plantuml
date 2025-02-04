@@ -35,20 +35,21 @@
  */
 package net.sourceforge.plantuml.eggs;
 
-import java.util.Map;
-
+import net.sourceforge.plantuml.Previous;
 import net.sourceforge.plantuml.api.PSystemFactory;
 import net.sourceforge.plantuml.core.Diagram;
 import net.sourceforge.plantuml.core.DiagramType;
 import net.sourceforge.plantuml.core.UmlSource;
 import net.sourceforge.plantuml.klimt.geom.GraphicPosition;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.skin.UmlDiagramType;
 
 public class PSystemWelcomeFactory implements PSystemFactory {
 
 	@Override
-	public Diagram createSystem(UmlSource source, Map<String, String> skinParam) {
+	public Diagram createSystem(UmlSource source, Previous previous, PreprocessingArtifact preprocessing) {
 		if (source.getTotalLineCount() == 2)
-			return new PSystemWelcome(source, GraphicPosition.BACKGROUND_CORNER_BOTTOM_RIGHT);
+			return new PSystemWelcome(source, GraphicPosition.BACKGROUND_CORNER_BOTTOM_RIGHT, preprocessing);
 
 		return null;
 	}
@@ -56,5 +57,11 @@ public class PSystemWelcomeFactory implements PSystemFactory {
 	public DiagramType getDiagramType() {
 		return DiagramType.UML;
 	}
+	
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return null;
+	}
+
 
 }

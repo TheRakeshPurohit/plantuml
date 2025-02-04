@@ -2,7 +2,7 @@ root {
   --common-background: #f1f1f1;
   --note-background: #FEFFDD;
   --grey-blue: #e2e2f0;
-  
+
   FontName SansSerif
   HyperLinkColor blue
   HyperLinkUnderlineThickness 1
@@ -75,6 +75,7 @@ package {
 
 stereotype {
   FontStyle italic
+  HorizontalAlignment center
 }
 
 
@@ -87,10 +88,11 @@ mainframe {
 element {
   Shadowing 0.0
   LineThickness 0.5
-  composite {
+  composite,package {
     title {
       FontStyle bold
-    }  
+      HorizontalAlignment center
+    }
   }
 }
 
@@ -114,7 +116,7 @@ sequenceDiagram {
 	  FontSize 11
 	  FontStyle bold
 	}
-	
+
 	groupHeader {
 	  LineThickness 1.5
 	  BackGroundColor #e
@@ -122,7 +124,7 @@ sequenceDiagram {
 	  FontSize 13
 	  FontStyle bold
 	}
-	
+
 	lifeLine {
 	  BackGroundColor white
 	  LineStyle 5
@@ -135,7 +137,7 @@ sequenceDiagram {
 	  LineThickness 1.5
 	  HorizontalAlignment center
 	}
-	
+
 	referenceHeader {
 	  LineColor black
 	  BackGroundColor #e
@@ -144,26 +146,26 @@ sequenceDiagram {
 	  FontStyle bold
 	  LineThickness 2.0
 	}
-	
+
 	box {
 	  BackGroundColor #d
-	
+
 	  FontSize 13
 	  FontStyle bold
 	}
-	
+
 	separator {
 	  LineColor black
 	  LineThickness 2.0
 	  BackGroundColor #e
-	  
+
 	  FontSize 13
 	  FontStyle bold
 	}
 	participant {
-	  RoundCorner 5  
+	  RoundCorner 5
 	}
-	
+
 	participant,actor,boundary,control,entity,queue,database,collections {
 	  BackgroundColor: var(--grey-blue);
 	  HorizontalAlignment center
@@ -173,6 +175,9 @@ sequenceDiagram {
 classDiagram,componentDiagram,objectDiagram {
   element {
     RoundCorner 5
+  }
+  generic {
+    BackgroundColor white
   }
 }
 
@@ -275,6 +280,7 @@ swimlane {
 arrow {
   FontSize 13
   LineThickness 1.0
+  BackGroundColor black
 }
 
 note {
@@ -444,6 +450,10 @@ timingDiagram {
       LineThickness 0.5
     }
 	arrow {
+	    FontName Serif
+	    FontSize 14
+	    FontStyle plain
+	    FontColor darkblue
 	    LineColor darkblue
 	    LineThickness 1.5
 	}
@@ -495,6 +505,7 @@ nwdiagDiagram {
 	group {
 		FontSize 12
 		BackGroundColor #e7e7e7
+		LineColor #e7e7e7
 	}
 	arrow {
 		FontSize 11
@@ -552,7 +563,7 @@ sequenceDiagram {
 	reference {
 	  LineColor #d
 	}
-	
+
 	referenceHeader {
 	  LineColor #d
 	  FontColor white
@@ -562,7 +573,7 @@ sequenceDiagram {
 	box {
 	  BackGroundColor #2
 	}
-	
+
 	separator {
 	  LineColor white
 	  BackGroundColor #1
@@ -572,7 +583,7 @@ sequenceDiagram {
 	  BackgroundColor: #2;
 	  HorizontalAlignment center
 	}
-	
+
 }
 
 spot {

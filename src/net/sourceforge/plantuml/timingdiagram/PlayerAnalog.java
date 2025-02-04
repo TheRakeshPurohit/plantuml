@@ -76,7 +76,7 @@ public class PlayerAnalog extends Player {
 	private Integer ticksEvery;
 
 	public PlayerAnalog(String code, ISkinParam skinParam, TimingRuler ruler, boolean compact, Stereotype stereotype) {
-		super(code, skinParam, ruler, compact, stereotype);
+		super(code, skinParam, ruler, compact, stereotype, null);
 		this.suggestedHeight = 100;
 	}
 
@@ -142,7 +142,7 @@ public class PlayerAnalog extends Player {
 	}
 
 	@Override
-	public void addNote(TimeTick now, Display note, Position position) {
+	public void addNote(TimeTick now, Display note, Position position, Stereotype stereotype) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -246,7 +246,7 @@ public class PlayerAnalog extends Player {
 	}
 
 	private TextBlock getTextBlock(double value) {
-		final Display display = Display.getWithNewlines("" + value);
+		final Display display = Display.getWithNewlines(skinParam.getPragma(), "" + value);
 		return display.create(getFontConfiguration(), HorizontalAlignment.LEFT, skinParam);
 	}
 

@@ -40,6 +40,7 @@ import net.sourceforge.plantuml.command.Command;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.command.CommandMultilines2;
 import net.sourceforge.plantuml.command.MultilinesStrategy;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.command.Trim;
 import net.sourceforge.plantuml.command.note.SingleMultiFactoryCommand;
@@ -102,9 +103,10 @@ public final class FactorySequenceNoteOnArrowCommand implements SingleMultiFacto
 		return new SingleLineCommand2<SequenceDiagram>(getRegexConcatSingleLine()) {
 
 			@Override
-			protected CommandExecutionResult executeArg(final SequenceDiagram system, LineLocation location,
-					RegexResult arg) throws NoSuchColorException {
-				return executeInternal(system, arg, BlocLines.getWithNewlines(arg.get("NOTE", 0)));
+			protected CommandExecutionResult executeArg(final SequenceDiagram diagram, LineLocation location,
+					RegexResult arg, ParserPass currentPass) throws NoSuchColorException {
+				final Display display = Display.getWithNewlines(diagram.getPragma(), arg.get("NOTE", 0));
+				return executeInternal(diagram, arg, diagram.manageVariable(display));
 			}
 
 		};
@@ -119,18 +121,20 @@ public final class FactorySequenceNoteOnArrowCommand implements SingleMultiFacto
 				return "^[%s]*end[%s]?note$";
 			}
 
-			protected CommandExecutionResult executeNow(final SequenceDiagram diagram, BlocLines lines)
-					throws NoSuchColorException {
+			@Override
+			protected CommandExecutionResult executeNow(final SequenceDiagram diagram, BlocLines lines,
+					ParserPass currentPass) throws NoSuchColorException {
 				final RegexResult line0 = getStartingPattern().matcher(lines.getFirst().getTrimmed().getString());
-				lines = lines.subExtract(1, 1);
+				lines = lines.subExtract(1, 1).expandsNewline(false);
 				lines = lines.removeEmptyColumns();
-				return executeInternal(diagram, line0, lines);
+				final Display display = lines.toDisplay();
+				return executeInternal(diagram, line0, diagram.manageVariable(display));
 			}
 
 		};
 	}
 
-	private CommandExecutionResult executeInternal(SequenceDiagram diagram, final RegexResult line0, BlocLines lines)
+	private CommandExecutionResult executeInternal(SequenceDiagram diagram, final RegexResult line0, Display display)
 			throws NoSuchColorException {
 		final EventWithNote event = diagram.getLastEventWithNote();
 		if (event == null)
@@ -144,7 +148,6 @@ public final class FactorySequenceNoteOnArrowCommand implements SingleMultiFacto
 		}
 
 		final NoteStyle style = NoteStyle.getNoteStyle(line0.get("STYLE", 0));
-		final Display display = diagram.manageVariable(lines.toDisplay());
 		final String backcolor0 = line0.get("COLOR", 0);
 		Colors colors = Colors.empty().add(ColorType.BACK,
 				backcolor0 == null ? null : HColorSet.instance().getColor(backcolor0));

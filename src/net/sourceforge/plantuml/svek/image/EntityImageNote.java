@@ -62,11 +62,10 @@ import net.sourceforge.plantuml.klimt.geom.XPoint2D;
 import net.sourceforge.plantuml.klimt.shape.DotPath;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.klimt.shape.TextBlockEmpty;
-import net.sourceforge.plantuml.sdot.SmetanaPath;
+import net.sourceforge.plantuml.sdot.SmetanaEdge;
 import net.sourceforge.plantuml.skin.ColorParam;
 import net.sourceforge.plantuml.skin.CornerParam;
 import net.sourceforge.plantuml.skin.SkinParamBackcolored;
-import net.sourceforge.plantuml.skin.UmlDiagramType;
 import net.sourceforge.plantuml.skin.rose.Rose;
 import net.sourceforge.plantuml.stereo.Stereotype;
 import net.sourceforge.plantuml.style.ISkinParam;
@@ -77,7 +76,7 @@ import net.sourceforge.plantuml.style.StyleSignature;
 import net.sourceforge.plantuml.style.StyleSignatureBasic;
 import net.sourceforge.plantuml.svek.AbstractEntityImage;
 import net.sourceforge.plantuml.svek.ShapeType;
-import net.sourceforge.plantuml.svek.SvekLine;
+import net.sourceforge.plantuml.svek.SvekEdge;
 import net.sourceforge.plantuml.svek.SvekNode;
 import net.sourceforge.plantuml.url.Url;
 import net.sourceforge.plantuml.utils.Direction;
@@ -91,28 +90,25 @@ public class EntityImageNote extends AbstractEntityImage implements Stencil {
 	private final int marginX2 = 15;
 	private final int marginY = 5;
 
-	private final ISkinParam skinParam;
 	private final Style style;
 
 	private final TextBlock textBlock;
 
-	public EntityImageNote(Entity entity, ISkinParam skinParam, UmlDiagramType umlDiagramType) {
-		super(entity, getSkin(getISkinParam(skinParam, entity), entity));
-		this.skinParam = getISkinParam(skinParam, entity);
+	public EntityImageNote(Entity entity) {
+		super(entity);
 
 		final Display strings = entity.getDisplay();
 
-		this.style = getDefaultStyleDefinition(umlDiagramType.getStyleName())
-				.getMergedStyle(skinParam.getCurrentStyleBuilder());
+		this.style = getDefaultStyleDefinition(getStyleName()).getMergedStyle(getSkinParam().getCurrentStyleBuilder());
 		if (entity.getColors().getColor(ColorType.BACK) == null)
-			this.noteBackgroundColor = style.value(PName.BackGroundColor).asColor(skinParam.getIHtmlColorSet());
+			this.noteBackgroundColor = style.value(PName.BackGroundColor).asColor(getSkinParam().getIHtmlColorSet());
 		else
 			this.noteBackgroundColor = entity.getColors().getColor(ColorType.BACK);
 
-		this.borderColor = style.value(PName.LineColor).asColor(skinParam.getIHtmlColorSet());
-		this.shadowing = style.value(PName.Shadowing).asDouble();
+		this.borderColor = style.value(PName.LineColor).asColor(getSkinParam().getIHtmlColorSet());
+		this.shadowing = style.getShadowing();
 
-		final FontConfiguration fontConfiguration = style.getFontConfiguration(skinParam.getIHtmlColorSet());
+		final FontConfiguration fontConfiguration = style.getFontConfiguration(getSkinParam().getIHtmlColorSet());
 		final HorizontalAlignment horizontalAlignment = style.getHorizontalAlignment();
 
 		if (strings.size() == 1 && strings.get(0).length() == 0)
@@ -206,7 +202,7 @@ public class EntityImageNote extends AbstractEntityImage implements Stencil {
 		if (opaleLink != null) {
 			final StringBounder stringBounder = ug.getStringBounder();
 
-			final SmetanaPath smetanaEdged = smetanaPathes.get(opaleLink);
+			final SmetanaEdge smetanaEdged = smetanaPathes.get(opaleLink);
 			final UTranslate move = new UTranslate(-node.getMinX(), -node.getMinY());
 
 			final XPoint2D startPoint = move.getTranslated(smetanaEdged.getStartPoint());
@@ -242,7 +238,7 @@ public class EntityImageNote extends AbstractEntityImage implements Stencil {
 			final UTranslate force1 = getMagneticBorder().getForceAt(stringBounder, path.getStartPoint());
 			final UTranslate force2 = other.getMagneticBorder().getForceAt(stringBounder, path.getEndPoint());
 
-			path.moveSvek(-node.getMinX(), -node.getMinY());
+			path.moveDelta(-node.getMinX(), -node.getMinY());
 
 			final double textWidth = getTextWidth(stringBounder);
 			final double textHeight = getTextHeight(stringBounder);
@@ -267,7 +263,7 @@ public class EntityImageNote extends AbstractEntityImage implements Stencil {
 	}
 
 	private double getRoundCorner() {
-		return skinParam.getRoundCorner(CornerParam.DEFAULT, null);
+		return getSkinParam().getRoundCorner(CornerParam.DEFAULT, null);
 	}
 
 	private void drawNormal(UGraphic ug) {
@@ -337,19 +333,19 @@ public class EntityImageNote extends AbstractEntityImage implements Stencil {
 		return ShapeType.RECTANGLE;
 	}
 
-	private SvekLine opaleLine;
+	private SvekEdge opaleLine;
 	private Link opaleLink;
 	private SvekNode node;
 	private SvekNode other;
-	private Map<Link, SmetanaPath> smetanaPathes;
+	private Map<Link, SmetanaEdge> smetanaPathes;
 
-	public void setOpaleLine(SvekLine line, SvekNode node, SvekNode other) {
+	public void setOpaleLine(SvekEdge line, SvekNode node, SvekNode other) {
 		this.opaleLine = line;
 		this.node = node;
 		this.other = Objects.requireNonNull(other);
 	}
 
-	public void setOpaleLink(Link link, SvekNode node, SvekNode other, Map<Link, SmetanaPath> edges) {
+	public void setOpaleLink(Link link, SvekNode node, SvekNode other, Map<Link, SmetanaEdge> edges) {
 		this.opaleLink = link;
 		this.node = node;
 		this.other = Objects.requireNonNull(other);

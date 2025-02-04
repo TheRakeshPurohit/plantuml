@@ -45,6 +45,7 @@ import net.sourceforge.plantuml.command.Command;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.command.CommandMultilines2;
 import net.sourceforge.plantuml.command.MultilinesStrategy;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.command.Trim;
 import net.sourceforge.plantuml.decoration.LinkDecor;
@@ -99,11 +100,12 @@ public final class CommandFactoryNoteActivity implements SingleMultiFactoryComma
 				return "^[%s]*end[%s]?note$";
 			}
 
-			public final CommandExecutionResult executeNow(final ActivityDiagram diagram, BlocLines lines)
+			@Override
+			public final CommandExecutionResult executeNow(final ActivityDiagram diagram, BlocLines lines, ParserPass currentPass)
 					throws NoSuchColorException {
 				// StringUtils.trim(lines, true);
 				final RegexResult arg = getStartingPattern().matcher(lines.getFirst().getTrimmed().getString());
-				lines = lines.subExtract(1, 1);
+				lines = lines.subExtract(1, 1).expandsNewline(false);
 				lines = lines.removeEmptyColumns();
 
 				Display strings = lines.toDisplay();
@@ -133,11 +135,11 @@ public final class CommandFactoryNoteActivity implements SingleMultiFactoryComma
 
 			@Override
 			protected CommandExecutionResult executeArg(final ActivityDiagram diagram, LineLocation location,
-					RegexResult arg) throws NoSuchColorException {
+					RegexResult arg, ParserPass currentPass) throws NoSuchColorException {
 				final String tmp = diagram.getUniqueSequence("GN");
 				final Quark<Entity> quark = diagram.quarkInContext(true, diagram.cleanId(tmp));
 
-				final Entity note = diagram.createNote(quark, tmp, Display.getWithNewlines(arg.get("NOTE", 0)));
+				final Entity note = diagram.createNote(quark, tmp, Display.getWithNewlines(diagram.getPragma(), arg.get("NOTE", 0)));
 				return executeInternal(diagram, arg, note);
 			}
 		};
@@ -162,16 +164,16 @@ public final class CommandFactoryNoteActivity implements SingleMultiFactoryComma
 		final LinkType type = new LinkType(LinkDecor.NONE, LinkDecor.NONE).goDashed();
 
 		if (position == Position.RIGHT)
-			link = new Link(diagram.getEntityFactory(), diagram.getSkinParam().getCurrentStyleBuilder(), activity, note,
-					type, LinkArg.noDisplay(1));
+			link = new Link(diagram, diagram.getSkinParam().getCurrentStyleBuilder(), activity,
+					note, type, LinkArg.noDisplay(1));
 		else if (position == Position.LEFT)
-			link = new Link(diagram.getEntityFactory(), diagram.getSkinParam().getCurrentStyleBuilder(), note, activity,
+			link = new Link(diagram, diagram.getSkinParam().getCurrentStyleBuilder(), note, activity,
 					type, LinkArg.noDisplay(1));
 		else if (position == Position.BOTTOM)
-			link = new Link(diagram.getEntityFactory(), diagram.getSkinParam().getCurrentStyleBuilder(), activity, note,
-					type, LinkArg.noDisplay(2));
+			link = new Link(diagram, diagram.getSkinParam().getCurrentStyleBuilder(), activity,
+					note, type, LinkArg.noDisplay(2));
 		else if (position == Position.TOP)
-			link = new Link(diagram.getEntityFactory(), diagram.getSkinParam().getCurrentStyleBuilder(), note, activity,
+			link = new Link(diagram, diagram.getSkinParam().getCurrentStyleBuilder(), note, activity,
 					type, LinkArg.noDisplay(2));
 		else
 			throw new IllegalArgumentException();

@@ -49,18 +49,18 @@ public enum PrintScale {
 	}
 
 	static public PrintScale fromString(String value) {
-		if (value.startsWith("w")) {
+		if (value.startsWith("w"))
 			return WEEKLY;
-		}
-		if (value.startsWith("m")) {
+
+		if (value.startsWith("m"))
 			return MONTHLY;
-		}
-		if (value.startsWith("q")) {
+
+		if (value.startsWith("q"))
 			return QUARTERLY;
-		}
-		if (value.startsWith("y")) {
+
+		if (value.startsWith("y"))
 			return YEARLY;
-		}
+
 		return DAILY;
 	}
 

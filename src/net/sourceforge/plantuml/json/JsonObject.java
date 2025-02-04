@@ -79,6 +79,17 @@ import net.sourceforge.plantuml.json.JsonObject.Member;
  */
 @SuppressWarnings("serial") // use default serial UID
 public class JsonObject extends JsonValue implements Iterable<Member> {
+	
+	/**
+	 * Added for PlantUML
+	 */
+	public JsonValue cloneMe() {
+		final JsonObject copy = new JsonObject();
+		for (int i=0; i<names.size(); i++)
+			copy.add(this.names.get(i), this.values.get(i).cloneMe());
+		return copy;
+	}
+
 
 	private final List<String> names;
 	private final List<JsonValue> values;
@@ -551,6 +562,34 @@ public class JsonObject extends JsonValue implements Iterable<Member> {
 		}
 		for (Member member : object) {
 			this.set(member.name, member.value);
+		}
+		return this;
+	}
+
+	/**
+	 * Copies all members of the specified object into this object. When the
+	 * specified object contains members with names that also exist in this object,
+	 * the existing values in this object will be replaced by the corresponding
+	 * values in the specified object, except for the case that both values are
+	 * JsonObjects themselves, which will trigger another merge of these objects.
+	 *
+	 * @param object the object to deep merge
+	 * @return the object itself, to enable method chaining
+	 */
+	public JsonObject deepMerge(JsonObject object) {
+		if (object == null) {
+			throw new NullPointerException("object is null");
+		}
+		for (Member member : object) {
+			final String name = member.name;
+			JsonValue value = member.value;
+			if (value instanceof JsonObject) {
+				final JsonValue existingValue = this.get(member.name);
+				if (existingValue instanceof JsonObject) {
+					value = ((JsonObject) existingValue).deepMerge((JsonObject) value);
+				}
+			}
+			this.set(name, value);
 		}
 		return this;
 	}

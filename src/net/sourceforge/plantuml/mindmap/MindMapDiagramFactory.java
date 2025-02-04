@@ -36,14 +36,16 @@
 package net.sourceforge.plantuml.mindmap;
 
 import java.util.List;
-import java.util.Map;
 
+import net.sourceforge.plantuml.Previous;
 import net.sourceforge.plantuml.command.Command;
 import net.sourceforge.plantuml.command.CommandRankDir;
 import net.sourceforge.plantuml.command.CommonCommands;
 import net.sourceforge.plantuml.command.PSystemCommandFactory;
 import net.sourceforge.plantuml.core.DiagramType;
 import net.sourceforge.plantuml.core.UmlSource;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.skin.UmlDiagramType;
 
 public class MindMapDiagramFactory extends PSystemCommandFactory {
 
@@ -64,8 +66,14 @@ public class MindMapDiagramFactory extends PSystemCommandFactory {
 	}
 
 	@Override
-	public MindMapDiagram createEmptyDiagram(UmlSource source, Map<String, String> skinParam) {
-		return new MindMapDiagram(source);
+	public MindMapDiagram createEmptyDiagram(UmlSource source, Previous previous, PreprocessingArtifact preprocessing) {
+		return new MindMapDiagram(source, preprocessing);
 	}
+	
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return UmlDiagramType.MINDMAP;
+	}
+
 
 }

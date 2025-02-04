@@ -39,12 +39,12 @@ package net.sourceforge.plantuml.svek.image;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 import net.sourceforge.plantuml.abel.Entity;
-import net.sourceforge.plantuml.abel.EntityPortion;
 import net.sourceforge.plantuml.abel.Link;
 import net.sourceforge.plantuml.cucadiagram.BodyFactory;
 import net.sourceforge.plantuml.cucadiagram.PortionShower;
@@ -72,7 +72,6 @@ import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.klimt.shape.TextBlockUtils;
 import net.sourceforge.plantuml.klimt.shape.UComment;
 import net.sourceforge.plantuml.stereo.Stereotype;
-import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.PName;
 import net.sourceforge.plantuml.style.SName;
 import net.sourceforge.plantuml.style.Style;
@@ -106,16 +105,16 @@ public class EntityImageDescription extends AbstractEntityImage {
 	private final Bibliotekon bibliotekon;
 	private final Fashion ctx;
 
-	public EntityImageDescription(Entity entity, ISkinParam skinParam2, PortionShower portionShower,
-			Collection<Link> links, SName styleName, Bibliotekon bibliotekon) {
-		super(entity, entity.getColors().mute(skinParam2));
+	public EntityImageDescription(Entity entity, PortionShower portionShower, Collection<Link> links,
+			Bibliotekon bibliotekon) {
+		super(entity);
 		this.useRankSame = getSkinParam().useRankSame();
 		this.bibliotekon = bibliotekon;
 		this.fixCircleLabelOverlapping = getSkinParam().fixCircleLabelOverlapping();
 
 		this.links = links;
 		USymbol symbol = getUSymbol(entity);
-		if (symbol == USymbols.FOLDER)
+		if (symbol == USymbols.FOLDER || symbol == USymbols.PACKAGE)
 			this.shapeType = ShapeType.FOLDER;
 		else if (symbol == USymbols.HEXAGON)
 			this.shapeType = ShapeType.HEXAGON;
@@ -131,24 +130,26 @@ public class EntityImageDescription extends AbstractEntityImage {
 
 		final Colors colors = entity.getColors();
 
-		final StyleSignatureBasic tmp;
+		final StyleSignatureBasic signatureTitle;
 		if (symbol instanceof USymbolActorBusiness)
-			tmp = StyleSignatureBasic.of(SName.root, SName.element, styleName, SName.actor, SName.business,
-					SName.title);
+			signatureTitle = StyleSignatureBasic.of(SName.root, SName.element, getStyleName(), SName.actor,
+					SName.business, SName.title);
 		else
-			tmp = StyleSignatureBasic.of(SName.root, SName.element, styleName, symbol.getSName(), SName.title);
+			signatureTitle = StyleSignatureBasic.of(SName.root, SName.element, getStyleName(), symbol.getSName(),
+					SName.title);
 
 		final Stereotype stereotype = entity.getStereotype();
-		final Style styleTitle = tmp.withTOBECHANGED(stereotype).getMergedStyle(getSkinParam().getCurrentStyleBuilder())
-				.eventuallyOverride(colors);
+		final Style styleTitle = signatureTitle.withTOBECHANGED(stereotype)
+				.getMergedStyle(getSkinParam().getCurrentStyleBuilder()).eventuallyOverride(colors);
 
-		final Style styleStereo = tmp.forStereotypeItself(stereotype)
-				.getMergedStyle(getSkinParam().getCurrentStyleBuilder());
+		final Style styleStereo = StyleSignatureBasic
+				.of(SName.root, SName.element, getStyleName(), symbol.getSName(), SName.stereotype)
+				.forStereotypeItself(stereotype).getMergedStyle(getSkinParam().getCurrentStyleBuilder());
 
-		final StyleSignatureBasic tmp2 = StyleSignatureBasic.of(SName.root, SName.element, styleName,
+		final StyleSignatureBasic signature = StyleSignatureBasic.of(SName.root, SName.element, getStyleName(),
 				symbol.getSName());
-		final Style style = tmp2.withTOBECHANGED(stereotype).getMergedStyle(getSkinParam().getCurrentStyleBuilder())
-				.eventuallyOverride(colors);
+		final Style style = signature.withTOBECHANGED(stereotype)
+				.getMergedStyle(getSkinParam().getCurrentStyleBuilder()).eventuallyOverride(colors);
 
 		final HColor forecolor = styleTitle.value(PName.LineColor).asColor(getSkinParam().getIHtmlColorSet());
 
@@ -158,7 +159,7 @@ public class EntityImageDescription extends AbstractEntityImage {
 
 		final double roundCorner = styleTitle.value(PName.RoundCorner).asDouble();
 		final double diagonalCorner = styleTitle.value(PName.DiagonalCorner).asDouble();
-		final double deltaShadow = styleTitle.value(PName.Shadowing).asDouble();
+		final double deltaShadow = styleTitle.getShadowing();
 		final UStroke stroke = styleTitle.getStroke(colors);
 		final FontConfiguration fcTitle = styleTitle.getFontConfiguration(getSkinParam().getIHtmlColorSet());
 		final FontConfiguration fc = style.getFontConfiguration(getSkinParam().getIHtmlColorSet());
@@ -170,7 +171,7 @@ public class EntityImageDescription extends AbstractEntityImage {
 		ctx = new Fashion(backcolor, forecolor).withStroke(stroke).withShadow(deltaShadow).withCorner(roundCorner,
 				diagonalCorner);
 
-		final Display codeDisplay = Display.getWithNewlines(entity.getName());
+		final Display codeDisplay = Display.getWithNewlines(getSkinParam().getPragma(), entity.getName());
 		if ((entity.getDisplay().equalsLike(codeDisplay) && symbol.getSName() == SName.package_)
 				|| entity.getDisplay().isWhite())
 			desc = TextBlockUtils.empty(style.value(PName.MinimumWidth).asDouble(), 0);
@@ -180,29 +181,36 @@ public class EntityImageDescription extends AbstractEntityImage {
 		else
 			desc = BodyFactory.create3(entity.getDisplay(), getSkinParam(), defaultAlign, fc, style.wrapWidth(), style);
 
-		stereo = TextBlockUtils.empty(0, 0);
-
+		final List<String> stereotypeLabels = portionShower.getVisibleStereotypeLabels(entity);
 		if (stereotype != null && stereotype.getSprite(getSkinParam()) != null)
 			stereo = stereotype.getSprite(getSkinParam());
-		else if (stereotype != null && stereotype.getLabel(Guillemet.DOUBLE_COMPARATOR) != null
-				&& portionShower.showPortion(EntityPortion.STEREOTYPE, entity))
-			stereo = Display.getWithNewlines(stereotype.getLabel(getSkinParam().guillemet())).create(fcStereo,
-					HorizontalAlignment.CENTER, getSkinParam());
+		else if (stereotype == null || stereotype.getLabel(Guillemet.DOUBLE_COMPARATOR) == null
+				|| stereotypeLabels.isEmpty())
+			stereo = TextBlockUtils.empty(0, 0);
+		else
+			stereo = TextBlockUtils.withMargin(
+					Display.create(stereotypeLabels).create(fcStereo, HorizontalAlignment.CENTER, getSkinParam()), 1,
+					0);
 
 		name = BodyFactory.create2(getSkinParam().getDefaultTextAlignment(HorizontalAlignment.CENTER), codeDisplay,
 				getSkinParam(), stereotype, entity, styleTitle);
 
+		final HorizontalAlignment stereotypeAlignment = styleStereo.getHorizontalAlignment();
+
 		if (hideText)
 			asSmall = symbol.asSmall(TextBlockUtils.empty(0, 0), TextBlockUtils.empty(0, 0), TextBlockUtils.empty(0, 0),
-					ctx, getSkinParam().getStereotypeAlignment());
+					ctx, stereotypeAlignment);
 		else
-			asSmall = symbol.asSmall(name, desc, stereo, ctx, getSkinParam().getStereotypeAlignment());
+			asSmall = symbol.asSmall(name, desc, stereo, ctx, stereotypeAlignment);
 
 	}
 
 	private USymbol getUSymbol(Entity entity) {
-		final USymbol result = entity.getUSymbol() == null ? getSkinParam().componentStyle().toUSymbol()
-				: entity.getUSymbol();
+		final USymbol result;
+		if (entity.getUSymbol() == null)
+			result = getSkinParam().componentStyle().toUSymbol();
+		else
+			result = entity.getUSymbol();
 		return Objects.requireNonNull(result);
 	}
 

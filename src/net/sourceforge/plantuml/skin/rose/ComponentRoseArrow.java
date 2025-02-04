@@ -5,12 +5,12 @@
  * (C) Copyright 2009-2024, Arnaud Roques
  *
  * Project Info:  https://plantuml.com
- * 
+ *
  * If you like this project or if you find it useful, you can support us at:
- * 
+ *
  * https://plantuml.com/patreon (only 1$ per month!)
  * https://plantuml.com/paypal
- * 
+ *
  * This file is part of PlantUML.
  *
  * PlantUML is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  *
  *
  * Original Author:  Arnaud Roques
- * 
+ *
  *
  */
 package net.sourceforge.plantuml.skin.rose;
@@ -100,19 +100,27 @@ public class ComponentRoseArrow extends AbstractComponentRoseArrow {
 		final double pos1 = start + 1;
 		final double pos2 = len - 1;
 
-		if (arrowConfiguration.getDecoration2() == ArrowDecoration.CIRCLE && dressing2.getHead() == ArrowHead.NONE)
-			len -= diamCircle / 2;
+		if (arrowConfiguration.getDecoration2() == ArrowDecoration.CIRCLE) {
+			if (dressing2.getHead() == ArrowHead.NONE)
+				len -= diamCircle / 2;
 
-		if (arrowConfiguration.getDecoration2() == ArrowDecoration.CIRCLE && dressing2.getHead() != ArrowHead.NONE)
-			len -= diamCircle / 2 + thinCircle;
-
-		if (arrowConfiguration.getDecoration1() == ArrowDecoration.CIRCLE && dressing1.getHead() == ArrowHead.NONE) {
-			start += diamCircle / 2;
-			len -= diamCircle / 2;
+			if (dressing2.getHead() != ArrowHead.NONE)
+				len -= diamCircle / 2 + thinCircle;
 		}
-		if (arrowConfiguration.getDecoration1() == ArrowDecoration.CIRCLE && dressing1.getHead() == ArrowHead.NORMAL) {
-			start += diamCircle + thinCircle;
-			len -= diamCircle + thinCircle;
+
+		if (arrowConfiguration.getDecoration1() == ArrowDecoration.CIRCLE) {
+			if (dressing1.getHead() == ArrowHead.NONE) {
+				start += diamCircle / 2;
+				len -= diamCircle / 2;
+			}
+			if (dressing1.getHead() == ArrowHead.ASYNC) {
+				start += diamCircle / 2 + thinCircle;
+				len -= diamCircle / 2 + thinCircle;
+			}
+			if (dressing1.getHead() == ArrowHead.NORMAL) {
+				start += diamCircle / 2 + thinCircle;
+				len -= diamCircle / 2 + thinCircle;
+			}
 		}
 
 		if (dressing2.getPart() == ArrowPart.FULL && dressing2.getHead() == ArrowHead.NORMAL)
@@ -147,20 +155,20 @@ public class ComponentRoseArrow extends AbstractComponentRoseArrow {
 				arrowConfiguration.getDecoration2(), lenFull);
 
 		if (inclination1 == 0 && inclination2 == 0)
-			arrowConfiguration.applyStroke(ug).apply(new UTranslate(start, posArrow)).draw(new ULine(len, 0));
+			arrowConfiguration.applyStroke(ug, getStyle()).apply(new UTranslate(start, posArrow)).draw(new ULine(len, 0));
 		else if (inclination1 != 0)
-			drawLine(arrowConfiguration.applyStroke(ug), start + len, posArrow, 0, posArrow + inclination1);
+			drawLine(arrowConfiguration.applyStroke(ug, getStyle()), start + len, posArrow, 0, posArrow + inclination1);
 		else if (inclination2 != 0)
-			drawLine(arrowConfiguration.applyStroke(ug), start, posArrow, pos2, posArrow + inclination2);
+			drawLine(arrowConfiguration.applyStroke(ug, getStyle()), start, posArrow, pos2, posArrow + inclination2);
 
 		final ArrowDirection direction2 = getDirection2();
 		final double textPos;
 		if (messagePosition == HorizontalAlignment.CENTER) {
 			final double textWidth = getTextBlock().calculateDimension(stringBounder).getWidth();
-			textPos = (dimensionToUse.getWidth() - textWidth) / 2;
+			textPos = (dimensionToUse.getWidth() - Math.abs(area.getTextDeltaX()) - textWidth) / 2;
 		} else if (messagePosition == HorizontalAlignment.RIGHT) {
 			final double textWidth = getTextBlock().calculateDimension(stringBounder).getWidth();
-			textPos = dimensionToUse.getWidth() - textWidth - getMarginX2()
+			textPos = dimensionToUse.getWidth() - Math.abs(area.getTextDeltaX()) - textWidth - getMarginX2()
 					- (direction2 == ArrowDirection.LEFT_TO_RIGHT_NORMAL ? getArrowDeltaX() : 0);
 		} else {
 			textPos = getMarginX1()
@@ -168,7 +176,7 @@ public class ComponentRoseArrow extends AbstractComponentRoseArrow {
 							? getArrowDeltaX()
 							: 0);
 		}
-		getTextBlock().drawU(ug.apply(new UTranslate(textPos, yText)));
+		getTextBlock().drawU(ug.apply(new UTranslate(textPos + Math.max(0, area.getTextDeltaX()), yText)));
 	}
 
 	private void drawLine(UGraphic ug, double x1, double y1, double x2, double y2) {
@@ -192,7 +200,7 @@ public class ComponentRoseArrow extends AbstractComponentRoseArrow {
 
 		if (decoration == ArrowDecoration.CIRCLE) {
 			final UEllipse circle = UEllipse.build(diamCircle, diamCircle);
-			ug.apply(UStroke.withThickness(thinCircle)).apply(getForegroundColor())
+			ug.apply(UStroke.withThickness(thinCircle)).apply(getForegroundColor()).apply(getBackgroundColor().bg())
 					.apply(new UTranslate(-diamCircle / 2 - thinCircle, -diamCircle / 2 - thinCircle / 2)).draw(circle);
 			if (dressing.getHead() != ArrowHead.CROSSX)
 				ug = ug.apply(UTranslate.dx(diamCircle / 2 + thinCircle));
@@ -227,7 +235,8 @@ public class ComponentRoseArrow extends AbstractComponentRoseArrow {
 	private void drawDressing2(UGraphic ug, ArrowDressing dressing, ArrowDecoration decoration, double lenFull) {
 
 		if (decoration == ArrowDecoration.CIRCLE) {
-			ug = ug.apply(UStroke.withThickness(thinCircle)).apply(getForegroundColor());
+			ug = ug.apply(UStroke.withThickness(thinCircle)).apply(getForegroundColor())
+					.apply(getBackgroundColor().bg());
 			final UEllipse circle = UEllipse.build(diamCircle, diamCircle);
 			ug.apply(new UTranslate(-diamCircle / 2 + thinCircle, -diamCircle / 2 - thinCircle / 2)).draw(circle);
 			ug = ug.apply(UStroke.simple());
@@ -267,9 +276,9 @@ public class ComponentRoseArrow extends AbstractComponentRoseArrow {
 			polygon.addPoint(0, 0);
 			polygon.addPoint(-getArrowDeltaX(), 0);
 		} else if (part == ArrowPart.BOTTOM_PART) {
-			polygon.addPoint(-getArrowDeltaX(), 1);
-			polygon.addPoint(0, 1);
-			polygon.addPoint(-getArrowDeltaX(), getArrowDeltaY() + 1);
+			polygon.addPoint(-getArrowDeltaX(), 0);
+			polygon.addPoint(0, 0);
+			polygon.addPoint(-getArrowDeltaX(), getArrowDeltaY());
 		} else {
 			polygon.addPoint(-getArrowDeltaX(), -getArrowDeltaY());
 			polygon.addPoint(0, 0);
@@ -287,9 +296,9 @@ public class ComponentRoseArrow extends AbstractComponentRoseArrow {
 			polygon.addPoint(0, 0);
 			polygon.addPoint(getArrowDeltaX(), 0);
 		} else if (part == ArrowPart.BOTTOM_PART) {
-			polygon.addPoint(getArrowDeltaX(), 1);
-			polygon.addPoint(0, 1);
-			polygon.addPoint(getArrowDeltaX(), getArrowDeltaY() + 1);
+			polygon.addPoint(getArrowDeltaX(), 0);
+			polygon.addPoint(0, 0);
+			polygon.addPoint(getArrowDeltaX(), getArrowDeltaY());
 		} else {
 			polygon.addPoint(getArrowDeltaX(), -getArrowDeltaY());
 			polygon.addPoint(0, 0);

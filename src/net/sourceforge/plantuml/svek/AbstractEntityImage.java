@@ -43,15 +43,16 @@ import net.sourceforge.plantuml.klimt.font.StringBounder;
 import net.sourceforge.plantuml.klimt.shape.AbstractTextBlock;
 import net.sourceforge.plantuml.stereo.Stereotype;
 import net.sourceforge.plantuml.style.ISkinParam;
+import net.sourceforge.plantuml.style.SName;
 
 public abstract class AbstractEntityImage extends AbstractTextBlock implements IEntityImage {
 
 	private final Entity entity;
 	private final ISkinParam skinParam;
 
-	public AbstractEntityImage(Entity entity, ISkinParam skinParam) {
+	public AbstractEntityImage(Entity entity) {
 		this.entity = Objects.requireNonNull(entity);
-		this.skinParam = Objects.requireNonNull(skinParam);
+		this.skinParam = entity.getSkinParam();
 	}
 
 	@Override
@@ -84,6 +85,11 @@ public abstract class AbstractEntityImage extends AbstractTextBlock implements I
 	@Override
 	public double getOverscanX(StringBounder stringBounder) {
 		return 0;
+	}
+
+	public SName getStyleName() {
+		return entity.getUmlDiagramType().getStyleName();
+
 	}
 
 }

@@ -35,8 +35,7 @@
  */
 package net.sourceforge.plantuml.descdiagram;
 
-import java.util.Map;
-
+import net.sourceforge.plantuml.Previous;
 import net.sourceforge.plantuml.StringUtils;
 import net.sourceforge.plantuml.abel.Entity;
 import net.sourceforge.plantuml.abel.LeafType;
@@ -44,12 +43,14 @@ import net.sourceforge.plantuml.classdiagram.AbstractEntityDiagram;
 import net.sourceforge.plantuml.core.UmlSource;
 import net.sourceforge.plantuml.decoration.symbol.USymbol;
 import net.sourceforge.plantuml.decoration.symbol.USymbols;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.skin.PragmaKey;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
 
 public class DescriptionDiagram extends AbstractEntityDiagram {
 
-	public DescriptionDiagram(UmlSource source, Map<String, String> skinParam) {
-		super(source, UmlDiagramType.DESCRIPTION, skinParam);
+	public DescriptionDiagram(UmlSource source, Previous previous, PreprocessingArtifact preprocessingArtifact) {
+		super(source, UmlDiagramType.DESCRIPTION, previous, preprocessingArtifact);
 	}
 
 	@Override
@@ -66,7 +67,7 @@ public class DescriptionDiagram extends AbstractEntityDiagram {
 	}
 
 	private boolean isUsecase() {
-		for (Entity leaf : getEntityFactory().leafs()) {
+		for (Entity leaf : this.leafs()) {
 			final LeafType type = leaf.getLeafType();
 			final USymbol usymbol = leaf.getUSymbol();
 			if (type == LeafType.USECASE || usymbol == getSkinParam().actorStyle().toUSymbol())
@@ -81,13 +82,17 @@ public class DescriptionDiagram extends AbstractEntityDiagram {
 		super.makeDiagramReady();
 		final LeafType defaultType = LeafType.DESCRIPTION;
 		final USymbol defaultSymbol = isUsecase() ? getSkinParam().actorStyle().toUSymbol() : USymbols.INTERFACE;
-		for (Entity leaf : getEntityFactory().leafs())
+		for (Entity leaf : this.leafs())
 			if (leaf.getLeafType() == LeafType.STILL_UNKNOWN)
 				leaf.muteToType(defaultType, defaultSymbol);
 	}
 
 	@Override
 	public String checkFinalError() {
+
+		if (getPragma().isFalse(PragmaKey.USE_INTERMEDIATE_PACKAGES))
+			packSomePackage();
+
 		this.applySingleStrategy();
 		return super.checkFinalError();
 	}

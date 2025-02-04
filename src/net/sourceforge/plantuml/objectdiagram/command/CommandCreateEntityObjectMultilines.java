@@ -40,6 +40,8 @@ import net.sourceforge.plantuml.abel.LeafType;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.command.CommandMultilines2;
 import net.sourceforge.plantuml.command.MultilinesStrategy;
+import net.sourceforge.plantuml.command.NameAndCodeParser;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.Trim;
 import net.sourceforge.plantuml.klimt.color.ColorParser;
 import net.sourceforge.plantuml.klimt.color.ColorType;
@@ -70,7 +72,7 @@ public class CommandCreateEntityObjectMultilines extends CommandMultilines2<Abst
 		return RegexConcat.build(CommandCreateEntityObjectMultilines.class.getName(), RegexLeaf.start(), //
 				new RegexLeaf("TYPE", "object"), //
 				RegexLeaf.spaceOneOrMore(), //
-				new RegexLeaf("NAME", "(?:[%g]([^%g]+)[%g][%s]+as[%s]+)?([%pLN_.]+)"), //
+				NameAndCodeParser.nameAndCode(), //
 				StereotypePattern.optional("STEREO"), //
 				UrlBuilder.OPTIONAL, //
 				RegexLeaf.spaceZeroOrMore(), //
@@ -86,7 +88,7 @@ public class CommandCreateEntityObjectMultilines extends CommandMultilines2<Abst
 	}
 
 	@Override
-	protected CommandExecutionResult executeNow(AbstractClassOrObjectDiagram diagram, BlocLines lines)
+	protected CommandExecutionResult executeNow(AbstractClassOrObjectDiagram diagram, BlocLines lines, ParserPass currentPass)
 			throws NoSuchColorException {
 		lines = lines.trim().removeEmptyLines();
 		final RegexResult line0 = getStartingPattern().matcher(lines.getFirst().getTrimmed().getString());
@@ -106,15 +108,15 @@ public class CommandCreateEntityObjectMultilines extends CommandMultilines2<Abst
 	}
 
 	private Entity executeArg0(AbstractClassOrObjectDiagram diagram, RegexResult line0) throws NoSuchColorException {
-		final String name = line0.get("NAME", 1);
-		final Quark<Entity> quark = diagram.quarkInContext(true, diagram.cleanId(name));
+		final String idShort = diagram.cleanId(line0.getLazzy("CODE", 0));
+		final Quark<Entity> quark = diagram.quarkInContext(true, idShort);
 
-		final String displayString = line0.get("NAME", 0);
+		final String displayString = line0.getLazzy("DISPLAY", 0);
 		final String stereotype = line0.get("STEREO", 0);
 
-		Display display = Display.getWithNewlines(displayString);
+		Display display = Display.getWithNewlines(diagram.getPragma(), displayString);
 		if (Display.isNull(display))
-			display = Display.getWithNewlines(name).withCreoleMode(CreoleMode.SIMPLE_LINE);
+			display = Display.getWithNewlines(diagram.getPragma(), quark.getName()).withCreoleMode(CreoleMode.SIMPLE_LINE);
 		Entity entity = quark.getData();
 		if (entity == null)
 			entity = diagram.reallyCreateLeaf(quark, display, LeafType.OBJECT, null);

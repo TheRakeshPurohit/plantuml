@@ -40,6 +40,8 @@ import net.sourceforge.plantuml.abel.Entity;
 import net.sourceforge.plantuml.abel.LeafType;
 import net.sourceforge.plantuml.classdiagram.ClassDiagram;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.NameAndCodeParser;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.klimt.color.ColorParser;
 import net.sourceforge.plantuml.klimt.color.ColorType;
@@ -50,11 +52,11 @@ import net.sourceforge.plantuml.klimt.creole.CreoleMode;
 import net.sourceforge.plantuml.klimt.creole.Display;
 import net.sourceforge.plantuml.klimt.font.FontParam;
 import net.sourceforge.plantuml.plasma.Quark;
+import net.sourceforge.plantuml.project.Failable;
 import net.sourceforge.plantuml.regex.IRegex;
 import net.sourceforge.plantuml.regex.RegexConcat;
 import net.sourceforge.plantuml.regex.RegexLeaf;
 import net.sourceforge.plantuml.regex.RegexOptional;
-import net.sourceforge.plantuml.regex.RegexOr;
 import net.sourceforge.plantuml.regex.RegexResult;
 import net.sourceforge.plantuml.stereo.Stereotag;
 import net.sourceforge.plantuml.stereo.Stereotype;
@@ -65,10 +67,6 @@ import net.sourceforge.plantuml.url.UrlMode;
 import net.sourceforge.plantuml.utils.LineLocation;
 
 public class CommandCreateClass extends SingleLineCommand2<ClassDiagram> {
-
-	public static final String DISPLAY_WITH_GENERIC = "[%g](.+?)(?:\\<(" + GenericRegexProducer.PATTERN + ")\\>)?[%g]";
-	public static final String CODE = "[^%s{}%g<>]+";
-	public static final String CODE_NO_DOTDOT = "[^%s{}%g<>:]+";
 
 	enum Mode {
 		EXTENDS, IMPLEMENTS
@@ -83,21 +81,7 @@ public class CommandCreateClass extends SingleLineCommand2<ClassDiagram> {
 				new RegexLeaf("TYPE", //
 						"(interface|enum|annotation|abstract[%s]+class|static[%s]+class|abstract|class|entity|circle|diamond|protocol|struct|exception|metaclass|stereotype)"), //
 				RegexLeaf.spaceOneOrMore(), //
-				new RegexOr(//
-						new RegexConcat(//
-								new RegexLeaf("DISPLAY1", DISPLAY_WITH_GENERIC), //
-								RegexLeaf.spaceOneOrMore(), //
-								new RegexLeaf("as"), //
-								RegexLeaf.spaceOneOrMore(), //
-								new RegexLeaf("CODE1", "(" + CODE + ")")), //
-						new RegexConcat(//
-								new RegexLeaf("CODE2", "(" + CODE + ")"), //
-								RegexLeaf.spaceOneOrMore(), //
-								new RegexLeaf("as"), //
-								RegexLeaf.spaceOneOrMore(), //
-								new RegexLeaf("DISPLAY2", DISPLAY_WITH_GENERIC)), //
-						new RegexLeaf("CODE3", "(" + CODE + ")"), //
-						new RegexLeaf("CODE4", "[%g]([^%g]+)[%g]")), //
+				NameAndCodeParser.nameAndCodeForClassWithGeneric(), //
 				new RegexOptional(new RegexConcat(RegexLeaf.spaceZeroOrMore(),
 						new RegexLeaf("GENERIC", "\\<(" + GenericRegexProducer.PATTERN + ")\\>"))), //
 				RegexLeaf.spaceZeroOrMore(), //
@@ -127,7 +111,7 @@ public class CommandCreateClass extends SingleLineCommand2<ClassDiagram> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(ClassDiagram diagram, LineLocation location, RegexResult arg)
+	protected CommandExecutionResult executeArg(ClassDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass)
 			throws NoSuchColorException {
 		final String typeString = StringUtils.goUpperCase(arg.get("TYPE", 0));
 		final LeafType type = LeafType.getLeafType(typeString);
@@ -138,15 +122,17 @@ public class CommandCreateClass extends SingleLineCommand2<ClassDiagram> {
 
 		final String stereo = arg.get("STEREO", 0);
 
-		final Quark<Entity> quark = diagram.quarkInContext(false, idShort);
+		final Failable<Quark<Entity>> quark = diagram.quarkInContextSafe(false, idShort);
+		if (quark.isFail())
+			return CommandExecutionResult.error(quark.getError(), quark.getScore());
 
-		Entity entity = quark.getData();
+		Entity entity = quark.get().getData();
 
 		if (entity == null) {
-			Display display = Display.getWithNewlines(displayString);
+			Display display = Display.getWithNewlines(diagram.getPragma(), displayString);
 			if (Display.isNull(display))
-				display = Display.getWithNewlines(quark.getName()).withCreoleMode(CreoleMode.SIMPLE_LINE);
-			entity = diagram.reallyCreateLeaf(quark, display, type, null);
+				display = Display.getWithNewlines(diagram.getPragma(), quark.get().getName()).withCreoleMode(CreoleMode.SIMPLE_LINE);
+			entity = diagram.reallyCreateLeaf(quark.get(), display, type, null);
 		} else {
 			if (entity.muteToType(type, null) == false)
 				return CommandExecutionResult.error("Bad name");
@@ -158,9 +144,10 @@ public class CommandCreateClass extends SingleLineCommand2<ClassDiagram> {
 
 		diagram.setLastEntity(entity);
 		if (stereo != null) {
-			entity.setStereotype(Stereotype.build(stereo, diagram.getSkinParam().getCircledCharacterRadius(),
+			final Stereotype stereotype = Stereotype.build(stereo, diagram.getSkinParam().getCircledCharacterRadius(),
 					diagram.getSkinParam().getFont(null, false, FontParam.CIRCLED_CHARACTER),
-					diagram.getSkinParam().getIHtmlColorSet()));
+					diagram.getSkinParam().getIHtmlColorSet());
+			entity.setStereotype(stereotype);
 			entity.setStereostyle(stereo);
 		}
 		if (generic != null)

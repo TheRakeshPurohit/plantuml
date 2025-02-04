@@ -79,7 +79,8 @@ public class Stdlib {
 		for (String s : infoString.split("\n"))
 			if (s.contains("=")) {
 				final String data[] = s.split("=");
-				this.info.put(data[0], data[1]);
+				if (data.length == 2)
+					this.info.put(data[0], data[1]);
 			}
 	}
 
@@ -130,7 +131,7 @@ public class Stdlib {
 		for (String s : infoString.split("\n"))
 			if (s.contains("=")) {
 				final String data[] = s.split("=");
-				if (data[0].equals("LINK"))
+				if (data[0].equalsIgnoreCase("link"))
 					return data[1];
 			}
 		return null;
@@ -144,7 +145,7 @@ public class Stdlib {
 		return (read1byte(is) << 8) + read1byte(is);
 	}
 
-	private String loadResource(String file) throws IOException {
+	/*private*/ public String loadResource(String file) throws IOException {
 		final SoftReference<String> cached = cache.get(file.toLowerCase());
 		if (cached != null) {
 			final String cachedResult = cached.get();
@@ -329,13 +330,13 @@ public class Stdlib {
 	}
 
 	public static void extractStdLib() throws IOException {
-		for (String name : getAll()) {
+		for (String name : getAllFolderNames()) {
 			final Stdlib folder = Stdlib.retrieve(name);
 			folder.extractMeFull();
 		}
 	}
 
-	private static Collection<String> getAll() throws IOException {
+	public static Collection<String> getAllFolderNames() throws IOException {
 		final Set<String> result = new TreeSet<>();
 		final InputStream home = getInternalInputStream("home", ".repx");
 		if (home == null)
@@ -392,6 +393,32 @@ public class Stdlib {
 		}
 	}
 
+	public Collection<String> getAllFilenamesWithSprites() throws IOException {
+		final Set<String> result = new TreeSet<>();
+		final DataInputStream dataStream = getDataStream();
+		if (dataStream == null)
+			return result;
+
+		dataStream.readUTF();
+		try {
+			while (true) {
+				final String filename = dataStream.readUTF();
+				if (filename.equals(SEPARATOR))
+					return result;
+
+				while (true) {
+					final String s = dataStream.readUTF();
+					if (s.equals(SEPARATOR))
+						break;
+					if (isSpriteLine(s))
+						result.add(filename);
+				}
+			}
+		} finally {
+			dataStream.close();
+		}
+	}
+
 	public List<String> extractAllSprites() throws IOException {
 		final List<String> result = new ArrayList<>();
 		final DataInputStream dataStream = getDataStream();
@@ -434,7 +461,7 @@ public class Stdlib {
 
 	public static void addInfoVersion(List<String> strings, boolean details) {
 		try {
-			for (String name : getAll()) {
+			for (String name : getAllFolderNames()) {
 				final Stdlib folder = Stdlib.retrieve(name);
 				if (details) {
 					strings.add("<b>" + name);
@@ -451,12 +478,23 @@ public class Stdlib {
 		}
 	}
 
-	private String getVersion() {
-		return info.get("VERSION");
+	public String getVersion() {
+		String result = info.get("VERSION");
+		if (result == null)
+			result = info.get("version");
+		return result;
 	}
 
-	private String getSource() {
-		return info.get("SOURCE");
+	public String getSource() {
+		String result = info.get("SOURCE");
+		if (result == null)
+			result = info.get("source");
+		return result;
+	}
+
+	public Map<String, String> getMetadata() {
+		return Collections.unmodifiableMap(info);
+
 	}
 
 	public static void printStdLib() {

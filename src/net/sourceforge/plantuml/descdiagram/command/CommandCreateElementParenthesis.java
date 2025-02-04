@@ -40,6 +40,7 @@ import net.sourceforge.plantuml.abel.Entity;
 import net.sourceforge.plantuml.abel.LeafType;
 import net.sourceforge.plantuml.classdiagram.ClassDiagram;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.decoration.symbol.USymbol;
 import net.sourceforge.plantuml.decoration.symbol.USymbols;
@@ -138,7 +139,7 @@ public class CommandCreateElementParenthesis extends SingleLineCommand2<ClassDia
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(ClassDiagram diagram, LineLocation location, RegexResult arg)
+	protected CommandExecutionResult executeArg(ClassDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass)
 			throws NoSuchColorException {
 		String codeRaw = arg.getLazzy("CODE", 0);
 		final String displayRaw = arg.getLazzy("DISPLAY", 0);
@@ -162,9 +163,9 @@ public class CommandCreateElementParenthesis extends SingleLineCommand2<ClassDia
 		if (CommandCreateElementFull.existsWithBadType3(diagram, quark, type, usymbol))
 			return CommandExecutionResult.error("This element (" + quark.getName() + ") is already defined");
 
-		final Entity entity = diagram.reallyCreateLeaf(quark, Display.getWithNewlines(display), type, usymbol);
-		entity.setDisplay(Display.getWithNewlines(display));
-		entity.setUSymbol(usymbol);
+		final Entity entity = diagram.reallyCreateLeaf(quark, Display.getWithNewlines(diagram.getPragma(), display), type, usymbol);
+		entity.setDisplay(Display.getWithNewlines(diagram.getPragma(), display));
+
 		if (stereotype != null)
 			entity.setStereotype(Stereotype.build(stereotype, diagram.getSkinParam().getCircledCharacterRadius(),
 					diagram.getSkinParam().getFont(null, false, FontParam.CIRCLED_CHARACTER),

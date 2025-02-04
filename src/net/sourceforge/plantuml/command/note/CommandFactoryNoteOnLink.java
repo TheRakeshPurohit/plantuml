@@ -43,12 +43,14 @@ import net.sourceforge.plantuml.command.Command;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.command.CommandMultilines2;
 import net.sourceforge.plantuml.command.MultilinesStrategy;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.command.Trim;
 import net.sourceforge.plantuml.klimt.color.ColorParser;
 import net.sourceforge.plantuml.klimt.color.ColorType;
 import net.sourceforge.plantuml.klimt.color.Colors;
 import net.sourceforge.plantuml.klimt.color.NoSuchColorException;
+import net.sourceforge.plantuml.klimt.creole.Display;
 import net.sourceforge.plantuml.regex.IRegex;
 import net.sourceforge.plantuml.regex.RegexConcat;
 import net.sourceforge.plantuml.regex.RegexLeaf;
@@ -61,6 +63,12 @@ import net.sourceforge.plantuml.utils.LineLocation;
 import net.sourceforge.plantuml.utils.Position;
 
 public final class CommandFactoryNoteOnLink implements SingleMultiFactoryCommand<CucaDiagram> {
+
+	private final ParserPass selectedpass;
+
+	public CommandFactoryNoteOnLink(ParserPass selectedpass) {
+		this.selectedpass = selectedpass;
+	}
 
 	private IRegex getRegexConcatSingleLine() {
 		return RegexConcat.build(CommandFactoryNoteOnLink.class.getName() + "single", RegexLeaf.start(), //
@@ -105,16 +113,23 @@ public final class CommandFactoryNoteOnLink implements SingleMultiFactoryCommand
 				return "^end[%s]?note$";
 			}
 
-			protected CommandExecutionResult executeNow(final CucaDiagram system, BlocLines lines)
-					throws NoSuchColorException {
+			@Override
+			protected CommandExecutionResult executeNow(final CucaDiagram system, BlocLines lines,
+					ParserPass currentPass) throws NoSuchColorException {
 				final String line0 = lines.getFirst().getTrimmed().getString();
-				lines = lines.subExtract(1, 1);
+				lines = lines.subExtract(1, 1).expandsNewline(false);
 				lines = lines.removeEmptyColumns();
 				if (lines.size() > 0) {
 					final RegexResult arg = getStartingPattern().matcher(line0);
-					return executeInternal(system, lines, arg);
+					final Display display = lines.toDisplay();
+					return executeInternal(system, arg, display);
 				}
 				return CommandExecutionResult.error("No note defined");
+			}
+
+			@Override
+			public boolean isEligibleFor(ParserPass pass) {
+				return pass == selectedpass;
 			}
 
 		};
@@ -124,15 +139,20 @@ public final class CommandFactoryNoteOnLink implements SingleMultiFactoryCommand
 		return new SingleLineCommand2<CucaDiagram>(getRegexConcatSingleLine()) {
 
 			@Override
-			protected CommandExecutionResult executeArg(final CucaDiagram system, LineLocation location,
-					RegexResult arg) throws NoSuchColorException {
-				final BlocLines note = BlocLines.getWithNewlines(arg.get("NOTE", 0));
-				return executeInternal(system, note, arg);
+			protected CommandExecutionResult executeArg(final CucaDiagram diagram, LineLocation location,
+					RegexResult arg, ParserPass currentPass) throws NoSuchColorException {
+				final Display display = Display.getWithNewlines(diagram.getPragma(), arg.get("NOTE", 0));
+				return executeInternal(diagram, arg, display);
+			}
+
+			@Override
+			public boolean isEligibleFor(ParserPass pass) {
+				return pass == selectedpass;
 			}
 		};
 	}
 
-	private CommandExecutionResult executeInternal(CucaDiagram diagram, BlocLines note, final RegexResult arg)
+	private CommandExecutionResult executeInternal(CucaDiagram diagram, final RegexResult arg, Display display)
 			throws NoSuchColorException {
 		final Link link = diagram.getLastLink();
 		if (link == null)
@@ -148,7 +168,7 @@ public final class CommandFactoryNoteOnLink implements SingleMultiFactoryCommand
 			url = urlBuilder.getUrl(arg.get("URL", 0));
 		}
 		final Colors colors = color().getColor(arg, diagram.getSkinParam().getIHtmlColorSet());
-		link.addNote(CucaNote.build(note.toDisplay(), position, colors));
+		link.addNote(CucaNote.build(display, position, colors));
 		return CommandExecutionResult.ok();
 	}
 

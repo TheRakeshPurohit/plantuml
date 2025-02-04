@@ -5,12 +5,12 @@
  * (C) Copyright 2009-2024, Arnaud Roques
  *
  * Project Info:  https://plantuml.com
- * 
+ *
  * If you like this project or if you find it useful, you can support us at:
- * 
+ *
  * https://plantuml.com/patreon (only 1$ per month!)
  * https://plantuml.com/paypal
- * 
+ *
  * This file is part of PlantUML.
  *
  * PlantUML is free software; you can redistribute it and/or modify it
@@ -30,7 +30,8 @@
  *
  *
  * Original Author:  Arnaud Roques
- * 
+ * Modified by    :  Shunli Han
+ *
  *
  */
 package net.sourceforge.plantuml.regexdiagram;
@@ -55,12 +56,14 @@ import net.sourceforge.plantuml.ebnf.ETileConcatenation;
 import net.sourceforge.plantuml.ebnf.ETileLookAheadOrBehind;
 import net.sourceforge.plantuml.ebnf.ETileNamedGroup;
 import net.sourceforge.plantuml.ebnf.ETileOneOrMore;
-import net.sourceforge.plantuml.ebnf.ETileOptional;
+import net.sourceforge.plantuml.ebnf.ETileOptional2;
+import net.sourceforge.plantuml.ebnf.ETileRegexGroup;
+import net.sourceforge.plantuml.ebnf.ETileRegexGroupAllBut;
 import net.sourceforge.plantuml.ebnf.ETileZeroOrMore;
 import net.sourceforge.plantuml.ebnf.Symbol;
+import net.sourceforge.plantuml.jsondiagram.StyleExtractor;
 import net.sourceforge.plantuml.klimt.color.HColor;
 import net.sourceforge.plantuml.klimt.color.HColorSet;
-import net.sourceforge.plantuml.klimt.color.HColors;
 import net.sourceforge.plantuml.klimt.drawing.UGraphic;
 import net.sourceforge.plantuml.klimt.font.FontConfiguration;
 import net.sourceforge.plantuml.klimt.font.StringBounder;
@@ -68,18 +71,28 @@ import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 import net.sourceforge.plantuml.klimt.shape.AbstractTextBlock;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.klimt.shape.TextBlockUtils;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
 import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.PName;
 import net.sourceforge.plantuml.style.Style;
+import net.sourceforge.plantuml.style.parser.StyleParsingException;
 import net.sourceforge.plantuml.utils.BlocLines;
 import net.sourceforge.plantuml.utils.CharInspector;
 
 public class PSystemRegex extends TitledDiagram {
 
-	public PSystemRegex(UmlSource source) {
-		super(source, UmlDiagramType.REGEX, null);
+	public PSystemRegex(UmlSource source, PreprocessingArtifact preprocessing) {
+		super(source, UmlDiagramType.REGEX, null, preprocessing);
+		final StyleExtractor styleExtractor = new StyleExtractor(source.iterator2());
+
 		final ISkinParam skinParam = getSkinParam();
+		try {
+			styleExtractor.applyStyles(skinParam);
+		} catch (StyleParsingException e) {
+			e.printStackTrace();
+		}
+
 		this.style = ETile.getStyleSignature().getMergedStyle(skinParam.getCurrentStyleBuilder());
 		this.fontConfiguration = style.getFontConfiguration(skinParam.getIHtmlColorSet());
 		this.colorSet = skinParam.getIHtmlColorSet();
@@ -96,33 +109,21 @@ public class PSystemRegex extends TitledDiagram {
 	private final HColorSet colorSet;
 	private final HColor lineColor;
 
-//	public CommandExecutionResult addBlocLines(BlocLines blines, String commentAbove, String commentBelow) {
-//		final boolean isCompact = getPragma().isDefine("compact");
-//		final CharIterator it = new CharIteratorImpl(blines);
-//		final EbnfExpression tmp1 = EbnfExpression.create(it, isCompact, commentAbove, commentBelow);
-//		if (tmp1.isEmpty())
-//			return CommandExecutionResult.error("Unparsable expression");
-//		expressions.add(tmp1);
-//		return CommandExecutionResult.ok();
-//
-//	}
-//
-//	public CommandExecutionResult addNote(final Display note, Colors colors) {
-//		expressions.add(new TextBlockable() {
-//			@Override
-//			public TextBlock getUDrawable(ISkinParam skinParam) {
-//				final FloatingNote f = FloatingNote.create(note, skinParam, SName.ebnf);
-//				return TextBlockUtils.withMargin(f, 0, 0, 5, 15);
-//			}
-//		});
-//		return CommandExecutionResult.ok();
-//	}
-
 	@Override
 	protected ImageData exportDiagramNow(OutputStream os, int index, FileFormatOption fileFormatOption)
 			throws IOException {
 		return createImageBuilder(fileFormatOption).drawable(getTextMainBlock(fileFormatOption)).write(os);
 	}
+
+//	public CommandExecutionResult changeLanguage(String lang) {
+//		setParam("language", lang);
+//		return CommandExecutionResult.ok();
+//	}
+//
+//	public CommandExecutionResult useDescriptiveNames(String useDescriptive) {
+//		setParam("descriptive", useDescriptive);
+//		return CommandExecutionResult.ok();
+//	}
 
 	@Override
 	protected TextBlock getTextMainBlock(FileFormatOption fileFormatOption) {
@@ -133,7 +134,7 @@ public class PSystemRegex extends TitledDiagram {
 
 			@Override
 			public void drawU(UGraphic ug) {
-				peekFirst.drawU(ug.apply(HColors.BLACK));
+				peekFirst.drawU(ug.apply(lineColor));
 			}
 
 			@Override
@@ -158,11 +159,11 @@ public class PSystemRegex extends TitledDiagram {
 			// System.err.println("result=" + result);
 			for (ReToken token : result)
 				if (token.getType() == ReTokenType.SIMPLE_CHAR)
-					push(token, Symbol.TERMINAL_STRING1);
+					pushEtileBox(token, Symbol.TERMINAL_STRING1);
 				else if (token.getType() == ReTokenType.ESCAPED_CHAR)
-					push(token, Symbol.TERMINAL_STRING1);
+					pushEtileBox(token, Symbol.TERMINAL_STRING1);
 				else if (token.getType() == ReTokenType.GROUP)
-					push(token, Symbol.SPECIAL_SEQUENCE);
+					pushRegexGroup(token);
 				else if (token.getType() == ReTokenType.LOOK_AHEAD)
 					lookAheadOrBehind(token.getData());
 				else if (token.getType() == ReTokenType.LOOK_BEHIND)
@@ -170,15 +171,15 @@ public class PSystemRegex extends TitledDiagram {
 				else if (token.getType() == ReTokenType.NAMED_GROUP)
 					namedGroup(token.getData());
 				else if (token.getType() == ReTokenType.CLASS)
-					push(token, Symbol.LITTERAL);
+					pushEtileBox(token, Symbol.LITTERAL);
 				else if (token.getType() == ReTokenType.ANCHOR)
-					push(token, Symbol.LITTERAL);
+					pushEtileBox(token, Symbol.LITTERAL);
 				else if (token.getType() == ReTokenType.CONCATENATION_IMPLICIT)
 					concatenation();
 				else if (token.getType() == ReTokenType.ALTERNATIVE)
 					alternation();
 				else if (token.getType() == ReTokenType.QUANTIFIER && token.getData().startsWith("*"))
-					repetitionZeroOrMore(false);
+					repetitionZeroOrMore();
 				else if (token.getType() == ReTokenType.QUANTIFIER && token.getData().startsWith("+"))
 					repetitionOneOrMore();
 				else if (token.getType() == ReTokenType.QUANTIFIER && token.getData().startsWith("?"))
@@ -205,9 +206,17 @@ public class PSystemRegex extends TitledDiagram {
 		return result;
 	}
 
-	private void push(ReToken element, Symbol type) {
-		// final Symbol type = Symbol.LITTERAL;
-		stack.addFirst(new ETileBox(element.getData(), type, fontConfiguration, style, colorSet, getSkinParam()));
+	private void pushEtileBox(ReToken element, Symbol type) {
+		stack.addFirst(new ETileBox(element.getData(), type, fontConfiguration, style, colorSet, getSkinParam(),
+				getPreprocessingArtifact().getOption()));
+	}
+
+	private void pushRegexGroup(ReToken element) {
+		final List<String> elements = new GroupSplitter().split(element.getData());
+		if (elements.get(0).equals("^"))
+			stack.addFirst(new ETileRegexGroupAllBut(elements, fontConfiguration, style, colorSet, getSkinParam()));
+		else
+			stack.addFirst(new ETileRegexGroup(elements, fontConfiguration, style, colorSet, getSkinParam()));
 	}
 
 	private void lookAheadOrBehind(String name) {
@@ -220,17 +229,14 @@ public class PSystemRegex extends TitledDiagram {
 		stack.addFirst(new ETileNamedGroup(arg1, fontConfiguration, colorSet, getSkinParam(), name));
 	}
 
-	private void repetitionZeroOrMore(boolean isCompact) {
+	private void repetitionZeroOrMore() {
 		final ETile arg1 = stack.removeFirst();
-		if (isCompact)
-			stack.addFirst(new ETileZeroOrMore(arg1));
-		else
-			stack.addFirst(new ETileOptional(new ETileOneOrMore(arg1), getSkinParam()));
+		stack.addFirst(new ETileZeroOrMore(arg1, getSkinParam()));
 	}
 
 	private void optional() {
 		final ETile arg1 = stack.removeFirst();
-		stack.addFirst(new ETileOptional(arg1, getSkinParam()));
+		stack.addFirst(new ETileOptional2(arg1, getSkinParam()));
 	}
 
 	private void repetitionOneOrMore() {

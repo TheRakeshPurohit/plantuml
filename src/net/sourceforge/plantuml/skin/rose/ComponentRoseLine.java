@@ -35,30 +35,40 @@
  */
 package net.sourceforge.plantuml.skin.rose;
 
+import net.sourceforge.plantuml.klimt.UGroupType;
 import net.sourceforge.plantuml.klimt.UStroke;
 import net.sourceforge.plantuml.klimt.UTranslate;
 import net.sourceforge.plantuml.klimt.color.HColor;
 import net.sourceforge.plantuml.klimt.color.HColorSet;
+import net.sourceforge.plantuml.klimt.color.HColors;
+import net.sourceforge.plantuml.klimt.creole.Display;
 import net.sourceforge.plantuml.klimt.drawing.UGraphic;
 import net.sourceforge.plantuml.klimt.font.StringBounder;
 import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 import net.sourceforge.plantuml.klimt.shape.ULine;
+import net.sourceforge.plantuml.klimt.shape.URectangle;
 import net.sourceforge.plantuml.skin.AbstractComponent;
 import net.sourceforge.plantuml.skin.Area;
 import net.sourceforge.plantuml.style.PName;
 import net.sourceforge.plantuml.style.Style;
+
+import static java.util.Collections.singletonMap;
 
 public class ComponentRoseLine extends AbstractComponent {
 
 	private final HColor color;
 	private final boolean continueLine;
 	private final UStroke stroke;
+	private final Display stringsToDisplay;
 
-	public ComponentRoseLine(Style style, boolean continueLine, HColorSet set) {
+	public ComponentRoseLine(Style style, boolean continueLine, HColorSet set, Display stringsToDisplay) {
 		super(style);
 		this.color = style.value(PName.LineColor).asColor(set);
 		this.stroke = style.getStroke();
 		this.continueLine = continueLine;
+		// Ideally, stringsToDisplay should never be null. However, as a safeguard, 
+		// we default to Display.NULL when it is null.
+		this.stringsToDisplay = stringsToDisplay == null ? Display.NULL : stringsToDisplay;
 	}
 
 	@Override
@@ -69,8 +79,12 @@ public class ComponentRoseLine extends AbstractComponent {
 //		if (continueLine)
 //			ug = ug.apply(UStroke.simple());
 
+		ug.startGroup(singletonMap(UGroupType.TITLE, stringsToDisplay.toTooltipText()));
+		drawTitleHoverTargetRect(ug, dimensionToUse);
+
 		final int x = (int) (dimensionToUse.getWidth() / 2);
 		ug.apply(UTranslate.dx(x)).draw(ULine.vline(dimensionToUse.getHeight()));
+		ug.closeGroup();
 	}
 
 	@Override
@@ -83,4 +97,13 @@ public class ComponentRoseLine extends AbstractComponent {
 		return 1;
 	}
 
+	private void drawTitleHoverTargetRect(UGraphic ug, XDimension2D dimensionToUse) {
+		if (dimensionToUse.getHeight() > 0) {
+			final double hoverTargetWidth = 8;
+			ug = ug.apply(UStroke.withThickness(0));
+			ug = ug.apply(HColors.transparent());
+			ug = ug.apply(UTranslate.dx((dimensionToUse.getWidth() - hoverTargetWidth) / 2));
+			ug.draw(URectangle.build(hoverTargetWidth, dimensionToUse.getHeight()));
+		}
+	}
 }

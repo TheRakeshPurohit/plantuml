@@ -294,15 +294,39 @@ public class GroupingTile extends AbstractTile {
 			full.add((CommonTile) tile);
 			if (tile instanceof GroupingTile) {
 				final GroupingTile groupingTile = (GroupingTile) tile;
-				final double headerHeight = groupingTile.getHeaderHeight(stringBounder);
-				final ArrayList<CommonTile> local2 = new ArrayList<>();
-				fillPositionelTiles(stringBounder, new TimeHook(y.getValue() + headerHeight), groupingTile.tiles,
-						local2, full);
+				fillPositionalSubGroupTiles(stringBounder, y, full, groupingTile);
+			}
+			if (tile instanceof TileParallel) {
+				final TileParallel tileParallel = (TileParallel) tile;
+				fillPositionalParallelTiles(stringBounder, y, full, tileParallel);
 			}
 			y = new TimeHook(y.getValue() + tile.getPreferredHeight());
 		}
 		return y;
 
+	}
+
+	private static void fillPositionalSubGroupTiles(StringBounder stringBounder, TimeHook y, List<CommonTile> full, GroupingTile groupingTile) {
+		final double headerHeight = groupingTile.getHeaderHeight(stringBounder);
+		final ArrayList<CommonTile> local2 = new ArrayList<>();
+		fillPositionelTiles(stringBounder, new TimeHook(y.getValue() + headerHeight), groupingTile.tiles,
+				local2, full);
+	}
+
+	private static void fillPositionalParallelTiles(StringBounder stringBounder, TimeHook yArg, List<CommonTile> full, TileParallel tileParallel) {
+		final double yPointAll = tileParallel.getContactPointRelative();
+		for (Tile tile : tileParallel.getTiles()) {
+
+			final double yPoint = tile.getContactPointRelative();
+			final double adjustment = yPointAll - yPoint;
+			TimeHook yAdjusted = new TimeHook(yArg.getValue() + adjustment);
+
+			tile.callbackY(yAdjusted);
+			full.add((CommonTile) tile);
+
+			if (tile instanceof GroupingTile)
+				fillPositionalSubGroupTiles(stringBounder, yAdjusted, full, (GroupingTile) tile);
+		}
 	}
 
 	private double getHeaderHeight(StringBounder stringBounder) {
@@ -317,28 +341,39 @@ public class GroupingTile extends AbstractTile {
 		tiles = removeEmptyCloseToParallel(tiles);
 		final List<Tile> result = new ArrayList<>();
 		for (Tile tile : tiles) {
-			if (result.size() > 0 && isParallel(tile)) {
-				if (pending == null) {
-					pending = new TileParallel(stringBounder, null);
-					final Tile tmp = result.get(result.size() - 1);
-					if (tmp instanceof LifeEventTile) {
-						pending.add(result.get(result.size() - 2));
-						pending.add(tmp);
-						// result.set(result.size() - 1, pending);
-						result.set(result.size() - 2, pending);
-						result.remove(result.size() - 1);
-					} else {
-						pending.add(tmp);
-						result.set(result.size() - 1, pending);
-					}
-				}
-				pending.add(tile);
-			} else {
+			if (!isParallel(tile) || result.size() == 0) {
 				result.add(tile);
-				pending = null;
+				if (tile instanceof LifeEventTile == false)
+					pending = null;
+			} else if (pending == null) {
+				pending = new TileParallel(stringBounder, null);
+				moveRecentParallelTilesToPending(result, pending);
+				pending.add(tile);
+				result.add(pending);
+			} else {
+				moveRecentParallelTilesToPending(result, pending);
+				pending.add(tile);
 			}
 		}
 		return result;
+	}
+
+	private static void moveRecentParallelTilesToPending(List<Tile> result, TileParallel pending) {
+		if (result.size() == 0)
+			return;
+
+		int capture = 1;
+		while (result.get(result.size() - capture) instanceof LifeEventTile)
+			capture++;
+
+		if (result.get(result.size() - capture) == pending)
+			capture--;
+
+		for (int i = result.size() - capture; i < result.size(); i++)
+			pending.add(result.get(i));
+
+		for (int i = 1; i <= capture; i++)
+			result.remove(result.size() - 1);
 	}
 
 	private static List<Tile> removeEmptyCloseToParallel(List<Tile> tiles) {

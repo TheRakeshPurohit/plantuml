@@ -37,18 +37,20 @@ package net.sourceforge.plantuml.chronology;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
+import net.sourceforge.plantuml.Previous;
 import net.sourceforge.plantuml.command.Command;
 import net.sourceforge.plantuml.command.CommonCommands;
 import net.sourceforge.plantuml.command.PSystemCommandFactory;
 import net.sourceforge.plantuml.core.DiagramType;
 import net.sourceforge.plantuml.core.UmlSource;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
 import net.sourceforge.plantuml.project.command.NaturalCommand;
 import net.sourceforge.plantuml.project.lang.SentenceAnd;
 import net.sourceforge.plantuml.project.lang.SentenceAndAnd;
 import net.sourceforge.plantuml.project.lang.SentenceSimple;
 import net.sourceforge.plantuml.project.lang.Subject;
+import net.sourceforge.plantuml.skin.UmlDiagramType;
 
 public class ChronologyDiagramFactory extends PSystemCommandFactory {
 
@@ -119,8 +121,13 @@ public class ChronologyDiagramFactory extends PSystemCommandFactory {
 	}
 
 	@Override
-	public ChronologyDiagram createEmptyDiagram(UmlSource source, Map<String, String> skinParam) {
-		return new ChronologyDiagram(source);
+	public ChronologyDiagram createEmptyDiagram(UmlSource source, Previous previous, PreprocessingArtifact preprocessing) {
+		return new ChronologyDiagram(source, preprocessing);
+	}
+
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return UmlDiagramType.CHRONOLOGY;
 	}
 
 }

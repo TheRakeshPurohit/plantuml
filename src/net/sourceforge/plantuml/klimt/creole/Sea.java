@@ -36,18 +36,21 @@
 package net.sourceforge.plantuml.klimt.creole;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
 import net.sourceforge.plantuml.klimt.creole.atom.Atom;
+import net.sourceforge.plantuml.klimt.creole.legacy.AtomText;
 import net.sourceforge.plantuml.klimt.font.StringBounder;
+import net.sourceforge.plantuml.klimt.font.UFont;
 import net.sourceforge.plantuml.klimt.geom.MinMax;
 import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 
 public class Sea {
 
 	private double currentX;
-	private final Map<Atom, Position> positions = new HashMap<Atom, Position>();
+	private final Map<Atom, Position> positions = new LinkedHashMap<Atom, Position>();
 	private final StringBounder stringBounder;
 
 	public Sea(StringBounder stringBounder) {
@@ -85,6 +88,61 @@ public class Sea {
 		}
 	}
 
+	private AtomText findFirstAtomText() {
+		for (Atom atom : positions.keySet()) {
+			if (atom instanceof AtomText) {
+				AtomText atomText = (AtomText) atom;
+				String text = atomText.getText();
+				if (text.trim().isEmpty()) {
+					continue;
+				}
+				return (AtomText) atom;
+			}
+		}
+		return null;
+	}
+
+	public void doAlignTikz() {
+		// #1628, make non-text vertical center with text
+		AtomText firstTextAtom = findFirstAtomText();
+		if (firstTextAtom == null) {
+			return;
+		}
+		Position firstTextPosition = positions.get(firstTextAtom);
+		double firstTextHeight = firstTextAtom.getFontHeight(stringBounder);
+		for (Map.Entry<Atom, Position> entry : new LinkedHashMap<>(positions).entrySet()) {
+			final Atom atom = entry.getKey();
+			if (atom instanceof AtomText) {
+				continue;
+			}
+			Position position = entry.getValue();
+			double targetY = firstTextPosition.getMinY() - (position.getHeight() - firstTextHeight) / 2;
+			double delta = targetY - position.getMinY();
+			if (delta != 0.0) {
+				positions.put(atom, position.translateY(delta));
+			}
+		}
+	}
+
+	public void doAlignTikzBaseline() {
+		// #1606, make text the same baseline
+		AtomText firstTextAtom = findFirstAtomText();
+		if (firstTextAtom == null) {
+			return;
+		}
+		double firstTextHeight = firstTextAtom.getFontHeight(stringBounder);
+		for (Map.Entry<Atom, Position> entry : new LinkedHashMap<>(positions).entrySet()) {
+			final Atom atom = entry.getKey();
+			if (!(atom instanceof AtomText)) {
+				continue;
+			}
+			double delta = firstTextHeight - ((AtomText) atom).getFontHeight(stringBounder);
+			if (delta != 0.0) {
+				positions.put(atom, entry.getValue().translateY(delta));
+			}
+		}
+	}
+
 	public void exportAllPositions(Map<Atom, Position> destination) {
 		destination.putAll(positions);
 	}
@@ -106,13 +164,30 @@ public class Sea {
 		if (positions.size() == 0) {
 			throw new IllegalStateException();
 		}
+		Atom atom = null;
 		double result = -Double.MAX_VALUE;
-		for (Position pos : positions.values()) {
+		for (Map.Entry<Atom, Position> entry : positions.entrySet()) {
+			Position pos = entry.getValue();
 			if (result < pos.getMaxY()) {
+				atom = entry.getKey();
 				result = pos.getMaxY();
 			}
 		}
-		return result;
+		if (!stringBounder.matchesProperty("TIKZ")) {
+			return result;
+		}
+		// For TKIZ, make sure the strip has at least 1pt
+		if (atom instanceof AtomText) {
+			// the delta in AtomText should be larger than 1 already
+			AtomText atomText = (AtomText) atom;
+			UFont font = atomText.getFontConfiguration().getFont();
+			String text = atomText.getText();
+			double height = stringBounder.calculateDimension(font, text).getHeight();
+			double delta = result - height;
+			return result + Math.max(1 - delta, 0);
+		} else {
+			return result + 1;
+		}
 	}
 
 	public double getHeight() {

@@ -5,12 +5,12 @@
  * (C) Copyright 2009-2024, Arnaud Roques
  *
  * Project Info:  https://plantuml.com
- * 
+ *
  * If you like this project or if you find it useful, you can support us at:
- * 
+ *
  * https://plantuml.com/patreon (only 1$ per month!)
  * https://plantuml.com/paypal
- * 
+ *
  * This file is part of PlantUML.
  *
  * PlantUML is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 import net.sourceforge.plantuml.klimt.shape.AbstractTextBlock;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.mindmap.IdeaShape;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
 import net.sourceforge.plantuml.regex.Matcher2;
 import net.sourceforge.plantuml.regex.MyPattern;
 import net.sourceforge.plantuml.regex.Pattern2;
@@ -84,8 +85,8 @@ public class WBSDiagram extends UmlDiagram {
 		return new DiagramDescription("Work Breakdown Structure");
 	}
 
-	public WBSDiagram(UmlSource source) {
-		super(source, UmlDiagramType.WBS, null);
+	public WBSDiagram(UmlSource source, PreprocessingArtifact preprocessing) {
+		super(source, UmlDiagramType.WBS, null, preprocessing);
 	}
 
 	@Override
@@ -131,7 +132,7 @@ public class WBSDiagram extends UmlDiagram {
 	}
 
 	public final static Pattern2 patternStereotype = MyPattern
-			.cmpile("^\\s*(.*?)(?:\\s*\\<\\<\\s*(.*)\\s*\\>\\>)\\s*$");
+			.cmpile("^\\s*(.*?)\\s*(\\<\\<\\s*(.*)\\s*\\>\\>)\\s*$");
 
 	public CommandExecutionResult addIdea(String code, HColor backColor, int level, String label, Direction direction,
 			IdeaShape shape) {
@@ -141,11 +142,11 @@ public class WBSDiagram extends UmlDiagram {
 			label = m.group(1);
 			stereotype = m.group(2);
 		}
-		final Display display = Display.getWithNewlines(label);
-		return addIdea(code, backColor, level, display, stereotype, direction, shape);
+		final Display display = Display.getWithNewlines(getPragma(), label);
+		return addIdea(code, backColor, level, display, Stereotype.build(stereotype), direction, shape);
 	}
 
-	public CommandExecutionResult addIdea(String code, HColor backColor, int level, Display display, String stereotype,
+	public CommandExecutionResult addIdea(String code, HColor backColor, int level, Display display, Stereotype stereotype,
 			Direction direction, IdeaShape shape) {
 		try {
 			if (level == 0) {
@@ -162,7 +163,7 @@ public class WBSDiagram extends UmlDiagram {
 		}
 	}
 
-	private void initRoot(HColor backColor, Display display, String stereotype, IdeaShape shape) {
+	private void initRoot(HColor backColor, Display display, Stereotype stereotype, IdeaShape shape) {
 		root = new WElement(backColor, display, stereotype, getSkinParam().getCurrentStyleBuilder(), shape);
 		last = root;
 	}
@@ -197,7 +198,7 @@ public class WBSDiagram extends UmlDiagram {
 		throw new UnsupportedOperationException("type=<" + type + ">[" + first + "]");
 	}
 
-	private CommandExecutionResult add(String code, HColor backColor, int level, Display display, String stereotype,
+	private CommandExecutionResult add(String code, HColor backColor, int level, Display display, Stereotype stereotype,
 			Direction direction, IdeaShape shape) {
 		try {
 			if (level == last.getLevel() + 1) {

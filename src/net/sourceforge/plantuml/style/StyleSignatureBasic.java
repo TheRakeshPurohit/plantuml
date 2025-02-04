@@ -45,16 +45,18 @@ import java.util.Set;
 import net.sourceforge.plantuml.stereo.Stereostyles;
 import net.sourceforge.plantuml.stereo.Stereotype;
 import net.sourceforge.plantuml.stereo.StereotypeDecoration;
+import net.sourceforge.plantuml.text.Guillemet;
 import net.sourceforge.plantuml.url.Url;
 
 public class StyleSignatureBasic implements StyleSignature {
-    // ::remove file when __HAXE__
+	// ::remove file when __HAXE__
 
+	public static final String STAR = "*";
 	private final Set<String> names = new LinkedHashSet<>();
 	private final boolean withDot;
 
 	public StyleSignatureBasic(String s) {
-		if (s.contains("*") || s.contains("&") || s.contains("-"))
+		if (s.contains(STAR) || s.contains("&") || s.contains("-"))
 			throw new IllegalArgumentException();
 
 		this.withDot = s.contains(".");
@@ -96,16 +98,20 @@ public class StyleSignatureBasic implements StyleSignature {
 		return new StyleSignatureBasic(withDot || s.contains("."), result);
 	}
 
-	public StyleSignatureBasic addS(String s) {
-		if (s == null)
+	public StyleSignatureBasic addS(Stereotype stereo) {
+		if (stereo == null)
 			return this;
 
-		if (s.contains("&"))
-			throw new IllegalArgumentException();
-
 		final Set<String> result = new LinkedHashSet<>(names);
-		result.add(StereotypeDecoration.PREFIX + clean(s));
-		return new StyleSignatureBasic(withDot || s.contains("."), result);
+		boolean withDotLocal = withDot;
+		for (String s : stereo.getLabels(Guillemet.NONE)) {
+			if (s.contains("&"))
+				throw new IllegalArgumentException();
+			result.add(StereotypeDecoration.PREFIX + clean(s));
+			withDotLocal = withDotLocal || s.contains(".");
+		}
+
+		return new StyleSignatureBasic(withDotLocal, result);
 	}
 
 	public StyleSignatureBasic add(SName name) {
@@ -114,12 +120,12 @@ public class StyleSignatureBasic implements StyleSignature {
 
 	public StyleSignatureBasic addStar() {
 		final Set<String> result = new LinkedHashSet<>(names);
-		result.add("*");
+		result.add(STAR);
 		return new StyleSignatureBasic(withDot, result);
 	}
 
 	public boolean isStarred() {
-		return names.contains("*");
+		return names.contains(STAR);
 	}
 
 	@Override
@@ -146,14 +152,14 @@ public class StyleSignatureBasic implements StyleSignature {
 	}
 
 	public boolean matchAll(StyleSignatureBasic other) {
-		final boolean namesContainsStar = names.contains("*");
+		final boolean namesContainsStar = names.contains(STAR);
 		if (other.isStarred() && namesContainsStar == false)
 			return false;
 
 		final int depthInNames = depthFromTokens(other.names);
 
 		for (String token : names) {
-			if (token.equals("*"))
+			if (token.equals(STAR))
 				continue;
 
 			if (namesContainsStar && depthInNames != -1 && depthFromToken(token) != -1) {

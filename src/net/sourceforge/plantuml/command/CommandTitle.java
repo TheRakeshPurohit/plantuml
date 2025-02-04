@@ -67,8 +67,8 @@ public class CommandTitle extends SingleLineCommand2<TitledDiagram> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(TitledDiagram diagram, LineLocation location, RegexResult arg) {
-		final Display s = Display.getWithNewlines(arg.getLazzy("TITLE", 0));
+	protected CommandExecutionResult executeArg(TitledDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass) {
+		final Display s = Display.getWithNewlines(diagram.getPragma(), arg.getLazzy("TITLE", 0));
 		diagram.setTitle(DisplayPositioned.single(s, HorizontalAlignment.CENTER, VerticalAlignment.TOP));
 		return CommandExecutionResult.ok();
 	}

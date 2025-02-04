@@ -62,15 +62,16 @@ public abstract class EntityImageStateCommon extends AbstractEntityImage {
 
 	final protected LineConfigurable lineConfig;
 
-	public EntityImageStateCommon(Entity entity, ISkinParam skinParam) {
-		super(entity, skinParam);
+	public EntityImageStateCommon(Entity entity) {
+		super(entity);
 
 		this.lineConfig = entity;
 
-		final FontConfiguration titleFontConfiguration = getStyleStateTitle(entity, skinParam)
+		final FontConfiguration titleFontConfiguration = getStyleStateTitle(entity, getSkinParam())
 				.getFontConfiguration(getSkinParam().getIHtmlColorSet(), entity.getColors());
 
-		this.title = entity.getDisplay().create8(titleFontConfiguration, HorizontalAlignment.CENTER, skinParam,
+		final HorizontalAlignment horizontalAlignment = getStyleState(entity, getSkinParam()).getHorizontalAlignment();
+		this.title = entity.getDisplay().create8(titleFontConfiguration, horizontalAlignment, getSkinParam(),
 				CreoleMode.FULL, getStyleState().wrapWidth());
 		this.url = entity.getUrl99();
 
@@ -111,7 +112,7 @@ public abstract class EntityImageStateCommon extends AbstractEntityImage {
 	final protected URectangle getShape(final XDimension2D dimTotal) {
 
 		final double corner = getStyleState().value(PName.RoundCorner).asDouble();
-		final double deltaShadow = getStyleState().value(PName.Shadowing).asDouble();
+		final double deltaShadow = getStyleState().getShadowing();
 
 		final URectangle rect = URectangle.build(dimTotal).rounded(corner);
 		rect.setDeltaShadow(deltaShadow);

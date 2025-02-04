@@ -58,7 +58,7 @@ public final class PositionableImpl implements Positionable {
 		return dim;
 	}
 
-	public void moveSvek(double deltaX, double deltaY) {
+	public void moveDelta(double deltaX, double deltaY) {
 		this.pos = this.pos.move(deltaX, deltaY);
 	}
 

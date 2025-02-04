@@ -53,18 +53,23 @@ public class Bibliotekon {
 
 	private final Map<Entity, SvekNode> nodeMap = new LinkedHashMap<Entity, SvekNode>();
 
-	private final List<SvekLine> lines0 = new ArrayList<>();
-	private final List<SvekLine> lines1 = new ArrayList<>();
-	private final List<SvekLine> allLines = new ArrayList<>();
+	private final List<SvekEdge> lines0 = new ArrayList<>();
+	private final List<SvekEdge> lines1 = new ArrayList<>();
+	private final List<SvekEdge> allLines = new ArrayList<>();
 
 	private final Collection<Link> links;
+	private final ColorSequence colorSequence;
 
 	public Bibliotekon(Collection<Link> links) {
 		this.links = links;
+		this.colorSequence = new ColorSequence();
 	}
 
-	public SvekNode createNode(Entity ent, IEntityImage image, ColorSequence colorSequence,
-			StringBounder stringBounder) {
+	public ColorSequence getColorSequence() {
+		return colorSequence;
+	}
+
+	public SvekNode createNode(Entity ent, IEntityImage image, StringBounder stringBounder) {
 		final SvekNode node = new SvekNode(ent, image, colorSequence, stringBounder);
 		nodeMap.put(ent, node);
 		// System.err.println("createNode " + ent + " " + nodeMap.size());
@@ -79,13 +84,13 @@ public class Bibliotekon {
 		return null;
 	}
 
-	public void addLine(SvekLine line) {
+	public void addLine(SvekEdge line) {
 		allLines.add(line);
 		if (first(line)) {
 			if (line.hasNoteLabelText()) {
 				// lines0.add(0, line);
 				for (int i = 0; i < lines0.size(); i++) {
-					final SvekLine other = lines0.get(i);
+					final SvekEdge other = lines0.get(i);
 					if (other.hasNoteLabelText() == false && line.sameConnections(other)) {
 						lines0.add(i, line);
 						return;
@@ -100,7 +105,7 @@ public class Bibliotekon {
 		}
 	}
 
-	private static boolean first(SvekLine line) {
+	private static boolean first(SvekEdge line) {
 		final int length = line.getLength();
 		if (length == 1)
 			return true;
@@ -158,15 +163,15 @@ public class Bibliotekon {
 		return Collections.unmodifiableMap(result);
 	}
 
-	public List<SvekLine> allLines() {
+	public List<SvekEdge> allLines() {
 		return Collections.unmodifiableList(allLines);
 	}
 
-	public List<SvekLine> lines0() {
+	public List<SvekEdge> lines0() {
 		return Collections.unmodifiableList(lines0);
 	}
 
-	public List<SvekLine> lines1() {
+	public List<SvekEdge> lines1() {
 		return Collections.unmodifiableList(lines1);
 	}
 
@@ -178,17 +183,17 @@ public class Bibliotekon {
 		return Collections.unmodifiableCollection(nodeMap.values());
 	}
 
-	public List<SvekLine> getAllLineConnectedTo(Entity leaf) {
-		final List<SvekLine> result = new ArrayList<>();
-		for (SvekLine line : allLines)
+	public List<SvekEdge> getAllLineConnectedTo(Entity leaf) {
+		final List<SvekEdge> result = new ArrayList<>();
+		for (SvekEdge line : allLines)
 			if (line.isLinkFromOrTo(leaf))
 				result.add(line);
 
 		return Collections.unmodifiableList(result);
 	}
 
-	public SvekLine getLine(Link link) {
-		for (SvekLine line : allLines)
+	public SvekEdge getLine(Link link) {
+		for (SvekEdge line : allLines)
 			if (line.isLink(link))
 				return line;
 

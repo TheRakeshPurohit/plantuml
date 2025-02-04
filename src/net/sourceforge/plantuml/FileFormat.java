@@ -2,7 +2,7 @@
  * PlantUML : a free UML diagram generator
  * ========================================================================
  *
- * (C) Copyright 2009-2024, Arnaud Roques
+ * (C) Copyright 2009-2025, Arnaud Roques
  *
  * Project Info:  https://plantuml.com
  * 
@@ -73,6 +73,8 @@ public enum FileFormat {
 	XMI_STANDARD("application/vnd.xmi+xml"), //
 	XMI_STAR("application/vnd.xmi+xml"), //
 	XMI_ARGO("application/vnd.xmi+xml"), //
+	XMI_CUSTOM("application/vnd.xmi+xml"), //
+	XMI_SCRIPT("application/vnd.xmi+xml"), //
 	SCXML("application/scxml+xml"), //
 	GRAPHML("application/graphml+xml"), //
 	PDF("application/pdf"), //
@@ -107,6 +109,9 @@ public enum FileFormat {
 	 */
 	public String getFileSuffix() {
 		// ::comment when __CORE__
+		if (name().startsWith("XMI_CUSTOM"))
+			return ".xmi_custom";
+
 		if (name().startsWith("XMI"))
 			return ".xmi";
 
@@ -126,8 +131,8 @@ public enum FileFormat {
 	final static private BufferedImage imDummy = new BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB);
 	final static public Graphics2D gg = imDummy.createGraphics();
 	static {
-		// KEY_FRACTIONALMETRICS
 		gg.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+		gg.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
 	}
 
 	public StringBounder getDefaultStringBounder() {
@@ -188,6 +193,10 @@ public enum FileFormat {
 	}
 
 	static private XDimension2D getJavaDimension(UFont font, String text) {
+		// System.err.println("text=" + text.length() + " " + text);
+		if (text.length() == 0)
+			return new XDimension2D(0, 0);
+
 		final Font javaFont = font.getUnderlayingFont(UFontContext.G2D);
 		final FontMetrics fm = gg.getFontMetrics(javaFont);
 		final Rectangle2D rect = fm.getStringBounds(text, gg);
@@ -223,24 +232,54 @@ public enum FileFormat {
 
 	private StringBounder getTikzStringBounder(final TikzFontDistortion tikzFontDistortion) {
 		return new StringBounderRaw(FileFormat.gg.getFontRenderContext()) {
+
+			private final LatexManager latexManager = new LatexManager(tikzFontDistortion.getTexSystem(), tikzFontDistortion.getTexPreamble());
+
 			public String toString() {
 				return "FileFormat::getTikzStringBounder";
 			}
 
 			protected XDimension2D calculateDimensionInternal(UFont font, String text) {
-				text = text.replace("\t", "    ");
-				final XDimension2D w1 = getJavaDimension(font.goTikz(-1), text);
-				final XDimension2D w2 = getJavaDimension(font.goTikz(0), text);
-				final XDimension2D w3 = getJavaDimension(font.goTikz(1), text);
-				final double factor = (w3.getWidth() - w1.getWidth()) / w2.getWidth();
-				final double distortion = tikzFontDistortion.getDistortion();
-				final double magnify = tikzFontDistortion.getMagnify();
-				final double delta = (w2.getWidth() - w1.getWidth()) * factor * distortion;
-				return w2.withWidth(Math.max(w1.getWidth(), magnify * w2.getWidth() - delta));
+				double[] widthHeightDepth = latexManager.getWidthHeightDepth(styleText(font, text));
+				double height = widthHeightDepth[1] + widthHeightDepth[2];
+				if (height == 0.0 && text.trim().isEmpty()) {
+					// avoid return 0 height for space, otherwise cause exception, case in #1259
+					height = latexManager.getWidthHeightDepth(styleText(font, " "))[0];
+				}
+				return new XDimension2D(widthHeightDepth[0], height);
 			}
 
 			public boolean matchesProperty(String propertyName) {
-				return false;
+				return "TIKZ".equalsIgnoreCase(propertyName);
+			}
+
+			public double getDescent(UFont font, String text) {
+				double[] widthHeightDepth = latexManager.getWidthHeightDepth(styleText(font, text));
+				return widthHeightDepth[2];
+			}
+
+			protected String styleText(UFont font, String text) {
+				if (font == null) {
+					return "$" + text + "$";
+				}
+				StringBuilder sb = new StringBuilder();
+				final boolean italic = font.isItalic();
+				final boolean bold = font.isBold();
+
+				if (italic)
+					sb.append("\\textit{");
+
+				if (bold)
+					sb.append("\\textbf{");
+
+				sb.append(LatexManager.protectText(text));
+				if (bold)
+					sb.append("}");
+
+				if (italic)
+					sb.append("}");
+
+				return sb.toString();
 			}
 		};
 	}

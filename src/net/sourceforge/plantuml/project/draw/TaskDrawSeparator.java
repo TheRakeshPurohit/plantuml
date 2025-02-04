@@ -49,12 +49,14 @@ import net.sourceforge.plantuml.klimt.shape.ULine;
 import net.sourceforge.plantuml.klimt.shape.URectangle;
 import net.sourceforge.plantuml.klimt.sprite.SpriteContainerEmpty;
 import net.sourceforge.plantuml.project.LabelStrategy;
+import net.sourceforge.plantuml.project.core.GArrowType;
+import net.sourceforge.plantuml.project.core.GSide;
 import net.sourceforge.plantuml.project.core.Task;
-import net.sourceforge.plantuml.project.core.TaskAttribute;
 import net.sourceforge.plantuml.project.lang.CenterBorderColor;
 import net.sourceforge.plantuml.project.time.Day;
 import net.sourceforge.plantuml.project.timescale.TimeScale;
 import net.sourceforge.plantuml.real.Real;
+import net.sourceforge.plantuml.stereo.Stereotype;
 import net.sourceforge.plantuml.style.ClockwiseTopRightBottomLeft;
 import net.sourceforge.plantuml.style.PName;
 import net.sourceforge.plantuml.style.SName;
@@ -62,7 +64,6 @@ import net.sourceforge.plantuml.style.Style;
 import net.sourceforge.plantuml.style.StyleBuilder;
 import net.sourceforge.plantuml.style.StyleSignatureBasic;
 import net.sourceforge.plantuml.url.Url;
-import net.sourceforge.plantuml.utils.Direction;
 
 public class TaskDrawSeparator implements TaskDraw {
 
@@ -92,11 +93,11 @@ public class TaskDrawSeparator implements TaskDraw {
 		final double dx = margin.getLeft() + padding.getLeft();
 		final double dy = margin.getTop() + padding.getTop();
 		final double x;
-		if (labelStrategy.titleInFirstColumn()) {
+		if (labelStrategy.titleInFirstColumn())
 			x = colTitles;
-		} else {
+		else
 			x = 0;
-		}
+
 		getTitle().drawU(ug.apply(new UTranslate(x + dx, dy)));
 	}
 
@@ -115,11 +116,11 @@ public class TaskDrawSeparator implements TaskDraw {
 	}
 
 	private TextBlock getTitle() {
-		if (name == null) {
+		if (name == null)
 			return TextBlockUtils.empty(0, 0);
-		}
-		return Display.getWithNewlines(this.name).create(getFontConfiguration(), HorizontalAlignment.LEFT,
-				new SpriteContainerEmpty());
+
+		return Display.getWithNewlines(styleBuilder.getSkinParam().getPragma(), this.name)
+				.create(getFontConfiguration(), HorizontalAlignment.LEFT, new SpriteContainerEmpty());
 	}
 
 	private FontConfiguration getFontConfiguration() {
@@ -203,7 +204,8 @@ public class TaskDrawSeparator implements TaskDraw {
 	}
 
 	@Override
-	public void setColorsAndCompletion(CenterBorderColor colors, int completion, Url url, Display note) {
+	public void setColorsAndCompletion(CenterBorderColor colors, int completion, Url url, Display note,
+			Stereotype noteStereotype) {
 	}
 
 	@Override
@@ -212,7 +214,7 @@ public class TaskDrawSeparator implements TaskDraw {
 	}
 
 	@Override
-	public double getY(StringBounder stringBounder, Direction direction) {
+	public double getY(StringBounder stringBounder, GSide side) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -222,12 +224,7 @@ public class TaskDrawSeparator implements TaskDraw {
 	}
 
 	@Override
-	public double getX1(TaskAttribute taskAttribute) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public double getX2(TaskAttribute taskAttribute) {
+	public double getX(StringBounder stringBounder, GSide side, GArrowType arrowType) {
 		throw new UnsupportedOperationException();
 	}
 

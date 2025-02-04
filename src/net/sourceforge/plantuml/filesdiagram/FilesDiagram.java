@@ -5,12 +5,12 @@
  * (C) Copyright 2009-2024, Arnaud Roques
  *
  * Project Info:  https://plantuml.com
- * 
+ *
  * If you like this project or if you find it useful, you can support us at:
- * 
+ *
  * https://plantuml.com/patreon (only 1$ per month!)
  * https://plantuml.com/paypal
- * 
+ *
  * This file is part of PlantUML.
  *
  * PlantUML is free software; you can redistribute it and/or modify it
@@ -46,17 +46,39 @@ import net.sourceforge.plantuml.UmlDiagram;
 import net.sourceforge.plantuml.core.DiagramDescription;
 import net.sourceforge.plantuml.core.ImageData;
 import net.sourceforge.plantuml.core.UmlSource;
+import net.sourceforge.plantuml.jsondiagram.StyleExtractor;
+import net.sourceforge.plantuml.klimt.font.FontConfiguration;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
+import net.sourceforge.plantuml.style.ISkinParam;
+import net.sourceforge.plantuml.style.SName;
+import net.sourceforge.plantuml.style.Style;
+import net.sourceforge.plantuml.style.StyleSignatureBasic;
+import net.sourceforge.plantuml.style.parser.StyleParsingException;
 import net.sourceforge.plantuml.text.StringLocated;
 
 public class FilesDiagram extends UmlDiagram {
 
 	private final FilesListing list;
 
-	public FilesDiagram(UmlSource source) {
-		super(source, UmlDiagramType.FILES, null);
-		this.list = new FilesListing(getSkinParam());
+	public FilesDiagram(UmlSource source, StyleExtractor styleExtractor, PreprocessingArtifact preprocessing) {
+		super(source, UmlDiagramType.FILES, null, preprocessing);
+
+		final ISkinParam skinParam = getSkinParam();
+		try {
+			styleExtractor.applyStyles(skinParam);
+		} catch (StyleParsingException e) {
+			e.printStackTrace();
+		}
+		final Style style = StyleSignatureBasic.of(SName.root, SName.element, SName.filesDiagram) //
+				.getMergedStyle(skinParam.getCurrentStyleBuilder());
+
+		// final FontConfiguration fontConfiguration =
+		// FontConfiguration.blackBlueTrue(UFont.courier(14));
+		final FontConfiguration fontConfiguration = style.getFontConfiguration(skinParam.getIHtmlColorSet());
+
+		this.list = new FilesListing(skinParam, fontConfiguration);
 
 		final Iterator<StringLocated> it = source.iterator2();
 		it.next();

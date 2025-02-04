@@ -15,12 +15,14 @@ import net.sourceforge.plantuml.klimt.color.HColors;
 import net.sourceforge.plantuml.klimt.drawing.svg.LengthAdjust;
 import net.sourceforge.plantuml.klimt.geom.HorizontalAlignment;
 import net.sourceforge.plantuml.klimt.geom.Rankdir;
+import net.sourceforge.plantuml.preproc.ConfigurationStore;
 import net.sourceforge.plantuml.skin.ActorStyle;
 import net.sourceforge.plantuml.skin.ComponentStyle;
 import net.sourceforge.plantuml.skin.CornerParam;
 import net.sourceforge.plantuml.skin.LineParam;
 import net.sourceforge.plantuml.skin.Padder;
 import net.sourceforge.plantuml.skin.PaddingParam;
+import net.sourceforge.plantuml.skin.Pragma;
 import net.sourceforge.plantuml.skin.SkinParam;
 import net.sourceforge.plantuml.skin.SplitParam;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
@@ -44,7 +46,7 @@ class SkinParamTest {
 	@EnumSource(UmlDiagramType.class)
 	public void testDefaultValues(UmlDiagramType umlDiagramType) {
 
-		final SkinParam skinParam = SkinParam.create(umlDiagramType);
+		final SkinParam skinParam = SkinParam.create(umlDiagramType, Pragma.createEmpty(), ConfigurationStore.createEmpty());
 		final Stereotype fooStereotype = Stereotype.build("<<foo>>");
 
 		assertThat(skinParam.actorStyle()).isEqualTo(ActorStyle.STICKMAN);
@@ -109,7 +111,7 @@ class SkinParamTest {
 
 		assertThat(skinParam.guillemet()).isEqualTo(Guillemet.GUILLEMET);
 
-		assertThat(skinParam.handwritten()).isFalse();
+		// assertThat(skinParam.handwrittenTOBEDELETED()).isFalse();
 
 		assertThat(skinParam.hoverPathColor()).isNull();
 
@@ -313,12 +315,12 @@ class SkinParamTest {
 		assertThat(skinParam.groupInheritance()).isEqualTo(intFromCsv(expectedValue));
 	}
 
-	@ParameterizedTest
-	@CsvSource({ "true,        true", "tRUe,        true", "TRUE,        true", "other_value, false", })
-	public void test_handwritten(String paramValue, boolean expected) {
-		final SkinParam skinParam = createSkinParam("handwritten", paramValue);
-		assertThat(skinParam.handwritten()).isEqualTo(expected);
-	}
+//	@ParameterizedTest
+//	@CsvSource({ "true,        true", "tRUe,        true", "TRUE,        true", "other_value, false", })
+//	public void test_handwritten(String paramValue, boolean expected) {
+//		final SkinParam skinParam = createSkinParam("handwritten", paramValue);
+//		assertThat(skinParam.handwrittenTOBEDELETED()).isEqualTo(expected);
+//	}
 
 	@ParameterizedTest
 	@CsvSource({ "false,       false", "fALSe,       false", "FALSE,       false", "other_value, true", })
@@ -443,7 +445,7 @@ class SkinParamTest {
 	private SkinParam createSkinParam(String... keyValuePairs) {
 		// Using SEQUENCE here is an arbitrary decision that should not affect test
 		// outcome
-		final SkinParam skinParam = SkinParam.create(UmlDiagramType.SEQUENCE);
+		final SkinParam skinParam = SkinParam.create(UmlDiagramType.SEQUENCE, Pragma.createEmpty(), ConfigurationStore.createEmpty());
 		for (int i = 0; i < keyValuePairs.length; i += 2) {
 			skinParam.setParam(StringUtils.goLowerCase(keyValuePairs[i]), keyValuePairs[i + 1]);
 		}

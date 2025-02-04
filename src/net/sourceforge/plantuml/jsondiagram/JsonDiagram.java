@@ -5,12 +5,12 @@
  * (C) Copyright 2009-2024, Arnaud Roques
  *
  * Project Info:  https://plantuml.com
- * 
+ *
  * If you like this project or if you find it useful, you can support us at:
- * 
+ *
  * https://plantuml.com/patreon (only 1$ per month!)
  * https://plantuml.com/paypal
- * 
+ *
  * This file is part of PlantUML.
  *
  * PlantUML is free software; you can redistribute it and/or modify it
@@ -36,11 +36,21 @@ package net.sourceforge.plantuml.jsondiagram;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
 
+import net.sourceforge.plantuml.AbstractPSystem;
 import net.sourceforge.plantuml.FileFormatOption;
-import net.sourceforge.plantuml.ScaleSimple;
 import net.sourceforge.plantuml.TitledDiagram;
+import net.sourceforge.plantuml.command.CommandControl;
+import net.sourceforge.plantuml.command.CommandScale;
+import net.sourceforge.plantuml.command.CommandScaleMaxHeight;
+import net.sourceforge.plantuml.command.CommandScaleMaxWidth;
+import net.sourceforge.plantuml.command.CommandScaleMaxWidthAndHeight;
+import net.sourceforge.plantuml.command.CommandScaleWidthAndHeight;
+import net.sourceforge.plantuml.command.CommandScaleWidthOrHeight;
+import net.sourceforge.plantuml.command.ParserPass;
+import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.core.DiagramDescription;
 import net.sourceforge.plantuml.core.ImageData;
 import net.sourceforge.plantuml.core.UmlSource;
@@ -57,7 +67,9 @@ import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 import net.sourceforge.plantuml.klimt.shape.AbstractTextBlock;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.klimt.shape.TextBlockUtils;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
+import net.sourceforge.plantuml.utils.BlocLines;
 import net.sourceforge.plantuml.yaml.Highlighted;
 
 public class JsonDiagram extends TitledDiagram {
@@ -67,17 +79,34 @@ public class JsonDiagram extends TitledDiagram {
 	private final boolean handwritten;
 
 	public JsonDiagram(UmlSource source, UmlDiagramType type, JsonValue json, List<Highlighted> highlighted,
-			StyleExtractor styleExtractor) {
-		super(source, type, null);
+			StyleExtractor styleExtractor, PreprocessingArtifact preprocessing) {
+		super(source, type, null, preprocessing);
 		this.handwritten = styleExtractor.isHandwritten();
-		if (json != null && (json.isString() || json.isBoolean() || json.isNumber())) {
+		if (json != null && (json.isString() || json.isBoolean() || json.isNumber() || json.isNull())) {
 			this.root = new JsonArray();
 			((JsonArray) this.root).add(json);
+		} else if (json != null && ((json.isArray() && json.asArray().isEmpty())
+									|| (json.isObject() && json.asObject().isEmpty()))) {
+			this.root = new JsonArray();
+			((JsonArray) this.root).add("");
 		} else {
 			this.root = json;
 		}
 		this.highlighted = highlighted;
-		setScale(new ScaleSimple(styleExtractor.getScale()));
+		final String scale = styleExtractor.getScale();
+		if (scale != null) {
+			final List<SingleLineCommand2<AbstractPSystem>> cmds = new ArrayList<>();
+			cmds.add(CommandScale.ME);
+			cmds.add(CommandScaleWidthAndHeight.ME);
+			cmds.add(CommandScaleWidthOrHeight.ME);
+			cmds.add(CommandScaleMaxWidth.ME);
+			cmds.add(CommandScaleMaxHeight.ME);
+			cmds.add(CommandScaleMaxWidthAndHeight.ME);
+			final BlocLines lines = BlocLines.singleString(scale);
+			for (SingleLineCommand2<AbstractPSystem> cmd : cmds)
+				if (cmd.isValid(lines) == CommandControl.OK)
+					cmd.execute(this, lines, ParserPass.ONE);
+		}
 	}
 
 	public DiagramDescription getDescription() {
@@ -102,7 +131,7 @@ public class JsonDiagram extends TitledDiagram {
 			ug = new UGraphicHandwritten(ug);
 		if (root == null) {
 			final Display display = Display
-					.getWithNewlines("Your data does not sound like " + getUmlDiagramType() + " data");
+					.getWithNewlines(getSkinParam().getPragma(), "Your data does not sound like " + getUmlDiagramType() + " data");
 			final FontConfiguration fontConfiguration = FontConfiguration.blackBlueTrue(UFont.courier(14));
 			TextBlock result = display.create(fontConfiguration, HorizontalAlignment.LEFT, getSkinParam());
 			result = TextBlockUtils.withMargin(result, 5, 2);

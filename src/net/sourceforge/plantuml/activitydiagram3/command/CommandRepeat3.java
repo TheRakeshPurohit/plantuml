@@ -38,6 +38,7 @@ package net.sourceforge.plantuml.activitydiagram3.command;
 import net.sourceforge.plantuml.activitydiagram3.ActivityDiagram3;
 import net.sourceforge.plantuml.activitydiagram3.ftile.BoxStyle;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.klimt.color.ColorParser;
 import net.sourceforge.plantuml.klimt.color.ColorType;
@@ -78,11 +79,11 @@ public class CommandRepeat3 extends SingleLineCommand2<ActivityDiagram3> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(ActivityDiagram3 diagram, LineLocation location, RegexResult arg)
+	protected CommandExecutionResult executeArg(ActivityDiagram3 diagram, LineLocation location, RegexResult arg, ParserPass currentPass)
 			throws NoSuchColorException {
 		final String s = arg.get("COLOR", 0);
 		final HColor color = s == null ? null : diagram.getSkinParam().getIHtmlColorSet().getColor(s);
-		final Display label = Display.getWithNewlines(arg.get("LABEL", 0));
+		final Display label = Display.getWithNewlines(diagram.getPragma(), arg.get("LABEL", 0));
 		final BoxStyle boxStyle;
 		final String styleString = arg.get("STYLE", 0);
 
@@ -90,15 +91,19 @@ public class CommandRepeat3 extends SingleLineCommand2<ActivityDiagram3> {
 			boxStyle = BoxStyle.PLAIN;
 		else
 			boxStyle = BoxStyle.fromString(styleString);
+		BoxStyle.checkDeprecatedWarning(diagram, styleString);
 
 		Colors colors = color().getColor(arg, diagram.getSkinParam().getIHtmlColorSet());
-		final String stereo = arg.get("STEREO", 0);
+		String stereo = arg.get("STEREO", 0);
+		if (stereo == null)
+			stereo = arg.get("STYLE", 1);
+		Stereotype stereotype = null;
 		if (stereo != null) {
-			final Stereotype stereotype = Stereotype.build(stereo);
+			stereotype = Stereotype.build(stereo);
 			colors = colors.applyStereotype(stereotype, diagram.getSkinParam(), ColorParam.activityBackground);
 		}
 
-		diagram.startRepeat(color, label, boxStyle, colors);
+		diagram.startRepeat(color, label, boxStyle, colors, stereotype);
 
 		return CommandExecutionResult.ok();
 	}

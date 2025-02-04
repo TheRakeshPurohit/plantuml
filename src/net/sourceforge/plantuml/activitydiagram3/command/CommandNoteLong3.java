@@ -39,6 +39,7 @@ import net.sourceforge.plantuml.activitydiagram3.ActivityDiagram3;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.command.CommandMultilines2;
 import net.sourceforge.plantuml.command.MultilinesStrategy;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.Trim;
 import net.sourceforge.plantuml.klimt.color.ColorParser;
 import net.sourceforge.plantuml.klimt.color.ColorType;
@@ -51,6 +52,9 @@ import net.sourceforge.plantuml.regex.RegexLeaf;
 import net.sourceforge.plantuml.regex.RegexResult;
 import net.sourceforge.plantuml.sequencediagram.NotePosition;
 import net.sourceforge.plantuml.sequencediagram.NoteType;
+import net.sourceforge.plantuml.stereo.Stereotag;
+import net.sourceforge.plantuml.stereo.Stereotype;
+import net.sourceforge.plantuml.stereo.StereotypePattern;
 import net.sourceforge.plantuml.utils.BlocLines;
 
 public class CommandNoteLong3 extends CommandMultilines2<ActivityDiagram3> {
@@ -69,10 +73,8 @@ public class CommandNoteLong3 extends CommandMultilines2<ActivityDiagram3> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeNow(final ActivityDiagram3 diagram, BlocLines lines)
+	protected CommandExecutionResult executeNow(final ActivityDiagram3 diagram, BlocLines lines, ParserPass currentPass)
 			throws NoSuchColorException {
-		// final List<? extends CharSequence> in =
-		// StringUtils.removeEmptyColumns2(lines.subList(1, lines.size() - 1));
 		final RegexResult line0 = getStartingPattern().matcher(lines.getFirst().getTrimmed().getString());
 		lines = lines.subExtract(1, 1);
 		lines = lines.removeEmptyColumns();
@@ -80,7 +82,13 @@ public class CommandNoteLong3 extends CommandMultilines2<ActivityDiagram3> {
 		final NoteType type = NoteType.defaultType(line0.get("TYPE", 0));
 		final Display note = lines.toDisplay();
 		final Colors colors = color().getColor(line0, diagram.getSkinParam().getIHtmlColorSet());
-		return diagram.addNote(note, position, type, colors);
+		
+		final String stereotypeString = line0.get("STEREO", 0);
+		Stereotype stereotype = null;
+		if (stereotypeString != null)
+			stereotype = Stereotype.build(stereotypeString);
+
+		return diagram.addNote(note, position, type, colors, stereotype);
 	}
 
 	static IRegex getRegexConcat() {
@@ -89,6 +97,8 @@ public class CommandNoteLong3 extends CommandMultilines2<ActivityDiagram3> {
 				RegexLeaf.spaceZeroOrMore(), //
 				new RegexLeaf("POSITION", "(left|right)?"), //
 				RegexLeaf.spaceZeroOrMore(), //
+				new RegexLeaf("TAGS", Stereotag.pattern() + "?"), //
+				StereotypePattern.optional("STEREO"), //
 				color().getRegex(), //
 				RegexLeaf.end());
 	}

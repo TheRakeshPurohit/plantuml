@@ -36,13 +36,15 @@
 package net.sourceforge.plantuml.bpm;
 
 import java.util.List;
-import java.util.Map;
 
 import net.sourceforge.plantuml.AbstractPSystem;
+import net.sourceforge.plantuml.Previous;
 import net.sourceforge.plantuml.command.Command;
 import net.sourceforge.plantuml.command.PSystemCommandFactory;
 import net.sourceforge.plantuml.core.DiagramType;
 import net.sourceforge.plantuml.core.UmlSource;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.skin.UmlDiagramType;
 
 public class BpmDiagramFactory extends PSystemCommandFactory {
 
@@ -62,8 +64,14 @@ public class BpmDiagramFactory extends PSystemCommandFactory {
 	}
 
 	@Override
-	public AbstractPSystem createEmptyDiagram(UmlSource source, Map<String, String> skinParam) {
-		return new BpmDiagram(source);
+	public AbstractPSystem createEmptyDiagram(UmlSource source, Previous previous, PreprocessingArtifact preprocessing) {
+		return new BpmDiagram(source, preprocessing);
 	}
+	
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return UmlDiagramType.BPM;
+	}
+
 
 }

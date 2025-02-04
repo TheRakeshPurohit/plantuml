@@ -42,6 +42,7 @@ import net.sourceforge.plantuml.abel.LeafType;
 import net.sourceforge.plantuml.abel.Link;
 import net.sourceforge.plantuml.abel.LinkArg;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.decoration.LinkDecor;
 import net.sourceforge.plantuml.decoration.LinkType;
@@ -53,6 +54,7 @@ import net.sourceforge.plantuml.klimt.color.NoSuchColorException;
 import net.sourceforge.plantuml.klimt.creole.Display;
 import net.sourceforge.plantuml.objectdiagram.AbstractClassOrObjectDiagram;
 import net.sourceforge.plantuml.plasma.Quark;
+import net.sourceforge.plantuml.project.Failable;
 import net.sourceforge.plantuml.regex.IRegex;
 import net.sourceforge.plantuml.regex.RegexConcat;
 import net.sourceforge.plantuml.regex.RegexLeaf;
@@ -168,7 +170,7 @@ final public class CommandLinkClass extends SingleLineCommand2<AbstractClassOrOb
 
 	@Override
 	protected CommandExecutionResult executeArg(AbstractClassOrObjectDiagram diagram, LineLocation location,
-			RegexResult arg) throws NoSuchColorException {
+			RegexResult arg, ParserPass currentPass) throws NoSuchColorException {
 		String ent1String = diagram.cleanId(arg.get("ENT1", 0));
 		String ent2String = diagram.cleanId(arg.get("ENT2", 0));
 		if (ent1String == null && ent2String == null)
@@ -197,15 +199,19 @@ final public class CommandLinkClass extends SingleLineCommand2<AbstractClassOrOb
 			ent2String = diagram.removePortId(ent2String);
 		}
 
-		final Quark<Entity> quark1 = diagram.quarkInContext(true, ent1String);
-		final Quark<Entity> quark2 = diagram.quarkInContext(true, ent2String);
+		final Failable<Quark<Entity>> quark1 = diagram.quarkInContextSafe(true, ent1String);
+		if (quark1.isFail())
+			return CommandExecutionResult.error(quark1.getError());
+		final Failable<Quark<Entity>> quark2 = diagram.quarkInContextSafe(true, ent2String);
+		if (quark2.isFail())
+			return CommandExecutionResult.error(quark2.getError());
 
-		Entity cl1 = quark1.getData();
+		Entity cl1 = quark1.get().getData();
 		if (cl1 == null)
-			cl1 = diagram.reallyCreateLeaf(quark1, Display.getWithNewlines(quark1.getName()), LeafType.CLASS, null);
-		Entity cl2 = quark2.getData();
+			cl1 = diagram.reallyCreateLeaf(quark1.get(), Display.getWithNewlines(diagram.getPragma(), quark1.get().getName()), LeafType.CLASS, null);
+		Entity cl2 = quark2.get().getData();
 		if (cl2 == null)
-			cl2 = diagram.reallyCreateLeaf(quark2, Display.getWithNewlines(quark2.getName()), LeafType.CLASS, null);
+			cl2 = diagram.reallyCreateLeaf(quark2.get(), Display.getWithNewlines(diagram.getPragma(), quark2.get().getName()), LeafType.CLASS, null);
 
 		final Direction dir = getDirection(arg);
 		final int queue;
@@ -220,11 +226,11 @@ final public class CommandLinkClass extends SingleLineCommand2<AbstractClassOrOb
 		final String kal2 = arg.get("QUALIFIER2", 0);
 
 		final LinkArg linkArg = LinkArg
-				.build(labels.getDisplay(), queue, diagram.getSkinParam().classAttributeIconSize() > 0)
+				.build(labels.getDisplay(diagram.getPragma()), queue, diagram.getSkinParam().classAttributeIconSize() > 0)
 				.withQuantifier(labels.getFirstLabel(), labels.getSecondLabel())
 				.withDistanceAngle(diagram.getLabeldistance(), diagram.getLabelangle()).withKal(kal1, kal2);
 
-		Link link = new Link(diagram.getEntityFactory(), diagram.getSkinParam().getCurrentStyleBuilder(), cl1, cl2,
+		Link link = new Link(diagram, diagram.getSkinParam().getCurrentStyleBuilder(), cl1, cl2,
 				linkType, linkArg);
 		if (arg.get("URL", 0) != null) {
 			final UrlBuilder urlBuilder = new UrlBuilder(diagram.getSkinParam().getValue("topurl"), UrlMode.STRICT);
@@ -290,11 +296,11 @@ final public class CommandLinkClass extends SingleLineCommand2<AbstractClassOrOb
 		else
 			queue = getQueueLength(arg);
 
-		final Display labelLink = Display.getWithNewlines(arg.get("LABEL_LINK", 0));
+		final Display labelLink = Display.getWithNewlines(diagram.getPragma(), arg.get("LABEL_LINK", 0));
 		final String firstLabel = arg.get("FIRST_LABEL", 0);
 		final String secondLabel = arg.get("SECOND_LABEL", 0);
 		final LinkArg linkArg = LinkArg.build(labelLink, queue, diagram.getSkinParam().classAttributeIconSize() > 0);
-		final Link link = new Link(diagram.getEntityFactory(), diagram.getSkinParam().getCurrentStyleBuilder(), cl1,
+		final Link link = new Link(diagram, diagram.getSkinParam().getCurrentStyleBuilder(), cl1,
 				cl2, linkType, linkArg.withQuantifier(firstLabel, secondLabel)
 						.withDistanceAngle(diagram.getLabeldistance(), diagram.getLabelangle()));
 		link.setColors(color().getColor(arg, diagram.getSkinParam().getIHtmlColorSet()));
@@ -328,10 +334,10 @@ final public class CommandLinkClass extends SingleLineCommand2<AbstractClassOrOb
 
 		Entity cl2 = ent2.getData();
 		if (cl2 == null)
-			cl2 = diagram.reallyCreateLeaf(ent2, Display.getWithNewlines(ent2.getName()), LeafType.CLASS, null);
+			cl2 = diagram.reallyCreateLeaf(ent2, Display.getWithNewlines(diagram.getPragma(), ent2.getName()), LeafType.CLASS, null);
 
 		final LinkType linkType = getLinkType(arg);
-		final Display label = Display.getWithNewlines(arg.get("LABEL_LINK", 0));
+		final Display label = Display.getWithNewlines(diagram.getPragma(), arg.get("LABEL_LINK", 0));
 
 		final boolean result = diagram.associationClass(1, cl1A, cl1B, cl2, linkType, label);
 		if (result == false)
@@ -361,10 +367,10 @@ final public class CommandLinkClass extends SingleLineCommand2<AbstractClassOrOb
 
 		Entity cl1 = (Entity) ent1.getData();
 		if (cl1 == null)
-			cl1 = diagram.reallyCreateLeaf(ent1, Display.getWithNewlines(ent1.getName()), LeafType.CLASS, null);
+			cl1 = diagram.reallyCreateLeaf(ent1, Display.getWithNewlines(diagram.getPragma(), ent1.getName()), LeafType.CLASS, null);
 
 		final LinkType linkType = getLinkType(arg);
-		final Display label = Display.getWithNewlines(arg.get("LABEL_LINK", 0));
+		final Display label = Display.getWithNewlines(diagram.getPragma(), arg.get("LABEL_LINK", 0));
 
 		final boolean result = diagram.associationClass(2, cl2A, cl2B, cl1, linkType, label);
 		if (result == false)
@@ -400,7 +406,7 @@ final public class CommandLinkClass extends SingleLineCommand2<AbstractClassOrOb
 		final Entity cl2B = (Entity) quark2B.getData();
 
 		final LinkType linkType = getLinkType(arg);
-		final Display label = Display.getWithNewlines(arg.get("LABEL_LINK", 0));
+		final Display label = Display.getWithNewlines(diagram.getPragma(), arg.get("LABEL_LINK", 0));
 
 		return diagram.associationClass(cl1A, cl1B, cl2A, cl2B, linkType, label);
 	}

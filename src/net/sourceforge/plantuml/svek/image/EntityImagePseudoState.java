@@ -49,7 +49,6 @@ import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.klimt.shape.UEllipse;
 import net.sourceforge.plantuml.stereo.Stereotype;
-import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.PName;
 import net.sourceforge.plantuml.style.SName;
 import net.sourceforge.plantuml.style.Style;
@@ -61,10 +60,9 @@ public class EntityImagePseudoState extends AbstractEntityImage {
 
 	private static final int SIZE = 22;
 	private final TextBlock desc;
-	private final SName sname;
 
-	public EntityImagePseudoState(Entity entity, ISkinParam skinParam, SName sname) {
-		this(entity, skinParam, "H", sname);
+	public EntityImagePseudoState(Entity entity) {
+		this(entity, "H");
 	}
 
 	private Style getStyle() {
@@ -72,18 +70,17 @@ public class EntityImagePseudoState extends AbstractEntityImage {
 	}
 
 	private StyleSignatureBasic getStyleSignature() {
-		return StyleSignatureBasic.of(SName.root, SName.element, sname, SName.diamond);
+		return StyleSignatureBasic.of(SName.root, SName.element, getStyleName(), SName.diamond);
 	}
 
-	public EntityImagePseudoState(Entity entity, ISkinParam skinParam, String historyText, SName sname) {
-		super(entity, skinParam);
-		this.sname = sname;
+	public EntityImagePseudoState(Entity entity, String historyText) {
+		super(entity);
 		final Stereotype stereotype = entity.getStereotype();
 
 		final FontConfiguration fontConfiguration = FontConfiguration.create(getSkinParam(), FontParam.STATE,
 				stereotype);
 
-		this.desc = Display.create(historyText).create(fontConfiguration, HorizontalAlignment.CENTER, skinParam);
+		this.desc = Display.create(historyText).create(fontConfiguration, HorizontalAlignment.CENTER, getSkinParam());
 	}
 
 	public XDimension2D calculateDimension(StringBounder stringBounder) {
@@ -96,7 +93,7 @@ public class EntityImagePseudoState extends AbstractEntityImage {
 		final Style style = getStyle();
 		final HColor borderColor = style.value(PName.LineColor).asColor(getSkinParam().getIHtmlColorSet());
 		final HColor backgroundColor = style.value(PName.BackGroundColor).asColor(getSkinParam().getIHtmlColorSet());
-		final double shadow = style.value(PName.Shadowing).asDouble();
+		final double shadow = style.getShadowing();
 		final UStroke stroke = style.getStroke();
 
 		circle.setDeltaShadow(shadow);

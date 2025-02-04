@@ -41,6 +41,7 @@ import net.sourceforge.plantuml.abel.Entity;
 import net.sourceforge.plantuml.abel.LeafType;
 import net.sourceforge.plantuml.classdiagram.ClassDiagram;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.decoration.symbol.USymbol;
 import net.sourceforge.plantuml.decoration.symbol.USymbols;
@@ -136,7 +137,7 @@ public class CommandCreateElementFull2 extends SingleLineCommand2<ClassDiagram> 
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(ClassDiagram diagram, LineLocation location, RegexResult arg)
+	protected CommandExecutionResult executeArg(ClassDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass)
 			throws NoSuchColorException {
 		if (mode == Mode.NORMAL_KEYWORD && diagram.isAllowMixing() == false)
 			return CommandExecutionResult.error("Use 'allowmixing' if you want to mix classes and other UML elements.");
@@ -191,7 +192,7 @@ public class CommandCreateElementFull2 extends SingleLineCommand2<ClassDiagram> 
 		}
 
 		final String idShort = StringUtils.eventuallyRemoveStartingAndEndingDoubleQuote(codeRaw);
-		final Display display = Display.getWithNewlines(displayRaw == null ? idShort : displayRaw);
+		final Display display = Display.getWithNewlines(diagram.getPragma(), displayRaw == null ? idShort : displayRaw);
 		final Quark<Entity> quark = diagram.quarkInContext(true, idShort);
 		Entity entity = quark.getData();
 		if (entity == null)
@@ -200,7 +201,7 @@ public class CommandCreateElementFull2 extends SingleLineCommand2<ClassDiagram> 
 		final String stereotype = arg.getLazzy("STEREOTYPE", 0);
 
 		entity.setDisplay(display);
-		entity.setUSymbol(usymbol);
+
 		if (stereotype != null)
 			entity.setStereotype(Stereotype.build(stereotype, diagram.getSkinParam().getCircledCharacterRadius(),
 					diagram.getSkinParam().getFont(null, false, FontParam.CIRCLED_CHARACTER),

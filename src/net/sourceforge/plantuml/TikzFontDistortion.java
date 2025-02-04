@@ -37,11 +37,16 @@ package net.sourceforge.plantuml;
 
 import java.util.StringTokenizer;
 
+import net.sourceforge.plantuml.skin.Pragma;
+import net.sourceforge.plantuml.skin.PragmaKey;
+
 public class TikzFontDistortion {
 	// ::remove file when __HAXE__
 
 	private final double magnify;
 	private final double distortion;
+	private String texSystem;
+	private String texPreamble;
 
 	private TikzFontDistortion(double magnify, double distortion) {
 		this.magnify = magnify;
@@ -82,6 +87,19 @@ public class TikzFontDistortion {
 
 	public final double getDistortion() {
 		return distortion;
+	}
+
+	public String getTexSystem() {
+		return texSystem;
+	}
+
+	public String getTexPreamble() {
+		return texPreamble;
+	}
+
+	public void updateFromPragma(Pragma pragma) {
+		this.texSystem = pragma.getValue(PragmaKey.TEX_SYSTEM);
+		this.texPreamble = pragma.getValue(PragmaKey.TEX_PREAMBLE);
 	}
 
 }

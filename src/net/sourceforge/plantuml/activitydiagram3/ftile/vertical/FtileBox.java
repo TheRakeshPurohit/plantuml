@@ -136,6 +136,9 @@ public class FtileBox extends AbstractFtile {
 
 	public static FtileBox create(ISkinParam skinParam, Display label, Swimlane swimlane, BoxStyle boxStyle,
 			Stereotype stereotype) {
+		if (stereotype == null && boxStyle != null)
+			stereotype = boxStyle.getStereotype();
+
 		final Style style = getStyleSignature().withTOBECHANGED(stereotype)
 				.getMergedStyle(skinParam.getCurrentStyleBuilder());
 		final Style styleArrow = getStyleSignatureArrow().getMergedStyle(skinParam.getCurrentStyleBuilder());
@@ -164,7 +167,7 @@ public class FtileBox extends AbstractFtile {
 		this.padding = style.getPadding();
 		this.margin = style.getMargin();
 		this.roundCorner = style.value(PName.RoundCorner).asDouble();
-		this.shadowing = style.value(PName.Shadowing).asDouble();
+		this.shadowing = style.getShadowing();
 
 		final LineBreakStrategy wrapWidth = style.wrapWidth();
 		this.minimumWidth = style.value(PName.MinimumWidth).asDouble();

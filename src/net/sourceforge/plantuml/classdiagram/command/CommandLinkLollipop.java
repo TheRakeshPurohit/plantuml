@@ -41,6 +41,7 @@ import net.sourceforge.plantuml.abel.LeafType;
 import net.sourceforge.plantuml.abel.Link;
 import net.sourceforge.plantuml.abel.LinkArg;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.decoration.LinkDecor;
 import net.sourceforge.plantuml.decoration.LinkType;
@@ -113,7 +114,7 @@ final public class CommandLinkLollipop extends SingleLineCommand2<AbstractClassO
 
 	@Override
 	protected CommandExecutionResult executeArg(AbstractClassOrObjectDiagram diagram, LineLocation location,
-			RegexResult arg) {
+			RegexResult arg, ParserPass currentPass) {
 
 		final String ent1 = arg.get("ENT1", 1);
 		final String ent2 = arg.get("ENT2", 1);
@@ -122,7 +123,7 @@ final public class CommandLinkLollipop extends SingleLineCommand2<AbstractClassO
 		final Entity cl2;
 		final Entity normalEntity;
 
-		final String suffix = "lol" + diagram.getUniqueSequence();
+		final String suffix = "lol" + diagram.getUniqueSequence("");
 		if (arg.get("LOL_THEN_ENT", 1) == null) {
 
 			final Quark<Entity> quark = diagram.quarkInContext(true, diagram.cleanId(ent1));
@@ -132,7 +133,7 @@ final public class CommandLinkLollipop extends SingleLineCommand2<AbstractClassO
 
 			final Quark<Entity> idNewLong = diagram.quarkInContext(true, diagram.cleanId(ent1) + suffix);
 			final LeafType type = getType(arg.get("ENT_THEN_LOL", 1));
-			cl2 = diagram.reallyCreateLeaf(idNewLong, Display.getWithNewlines(ent2), type, null);
+			cl2 = diagram.reallyCreateLeaf(idNewLong, Display.getWithNewlines(diagram.getPragma(), ent2), type, null);
 			normalEntity = cl1;
 
 //			assert arg.get("ENT_THEN_LOL", 0) != null;
@@ -151,7 +152,7 @@ final public class CommandLinkLollipop extends SingleLineCommand2<AbstractClassO
 
 			final Quark<Entity> idNewLong = diagram.quarkInContext(true, diagram.cleanId(ent2) + suffix);
 			final LeafType type = getType(arg.get("LOL_THEN_ENT", 0));
-			cl1 = diagram.reallyCreateLeaf(idNewLong, Display.getWithNewlines(ent1), type, null);
+			cl1 = diagram.reallyCreateLeaf(idNewLong, Display.getWithNewlines(diagram.getPragma(), ent1), type, null);
 			normalEntity = cl2;
 		}
 
@@ -199,9 +200,9 @@ final public class CommandLinkLollipop extends SingleLineCommand2<AbstractClassO
 			}
 			labelLink = StringUtils.eventuallyRemoveStartingAndEndingDoubleQuote(labelLink);
 		}
-		final LinkArg linkArg = LinkArg.build(Display.getWithNewlines(labelLink), length,
+		final LinkArg linkArg = LinkArg.build(Display.getWithNewlines(diagram.getPragma(), labelLink), length,
 				diagram.getSkinParam().classAttributeIconSize() > 0);
-		final Link link = new Link(diagram.getEntityFactory(), diagram.getSkinParam().getCurrentStyleBuilder(), cl1,
+		final Link link = new Link(diagram, diagram.getSkinParam().getCurrentStyleBuilder(), cl1,
 				cl2, linkType, linkArg.withQuantifier(firstLabel, secondLabel)
 						.withDistanceAngle(diagram.getLabeldistance(), diagram.getLabelangle()));
 		diagram.resetPragmaLabel();

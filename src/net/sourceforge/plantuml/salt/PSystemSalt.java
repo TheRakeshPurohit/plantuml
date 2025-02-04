@@ -5,12 +5,12 @@
  * (C) Copyright 2009-2024, Arnaud Roques
  *
  * Project Info:  https://plantuml.com
- * 
+ *
  * If you like this project or if you find it useful, you can support us at:
- * 
+ *
  * https://plantuml.com/patreon (only 1$ per month!)
  * https://plantuml.com/paypal
- * 
+ *
  * This file is part of PlantUML.
  *
  * PlantUML is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  *
  *
  * Original Author:  Arnaud Roques
- * 
+ *
  *
  */
 package net.sourceforge.plantuml.salt;
@@ -42,7 +42,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import net.sourceforge.plantuml.FileFormat;
 import net.sourceforge.plantuml.FileFormatOption;
 import net.sourceforge.plantuml.ScaleSimple;
 import net.sourceforge.plantuml.TitledDiagram;
@@ -52,6 +51,7 @@ import net.sourceforge.plantuml.api.ImageDataSimple;
 import net.sourceforge.plantuml.command.Command;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.command.CommandFactorySprite;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.core.DiagramDescription;
 import net.sourceforge.plantuml.core.ImageData;
 import net.sourceforge.plantuml.core.UmlSource;
@@ -65,6 +65,7 @@ import net.sourceforge.plantuml.klimt.shape.AbstractTextBlock;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.klimt.sprite.Sprite;
 import net.sourceforge.plantuml.log.Logme;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
 import net.sourceforge.plantuml.salt.element.Element;
 import net.sourceforge.plantuml.salt.factory.AbstractElementFactoryComplex;
 import net.sourceforge.plantuml.salt.factory.ElementFactory;
@@ -87,26 +88,28 @@ import net.sourceforge.plantuml.salt.factory.ElementFactoryTextField;
 import net.sourceforge.plantuml.salt.factory.ElementFactoryTree;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
 import net.sourceforge.plantuml.style.ClockwiseTopRightBottomLeft;
+import net.sourceforge.plantuml.text.StringLocated;
 import net.sourceforge.plantuml.utils.BlocLines;
 import net.sourceforge.plantuml.utils.Log;
 
 public class PSystemSalt extends TitledDiagram implements WithSprite {
 
 	private final List<String> data;
-	private final SaltDictionary dictionary = new SaltDictionary();
+	private final SaltDictionary dictionary;
 
 	@Deprecated
-	public PSystemSalt(UmlSource source, List<String> data) {
-		super(source, UmlDiagramType.SALT, null);
+	public PSystemSalt(UmlSource source, List<String> data, PreprocessingArtifact preprocessing) {
+		super(source, UmlDiagramType.SALT, null, preprocessing);
+		this.dictionary = new SaltDictionary(preprocessing.getOption());
 		this.data = data;
 	}
 
-	public PSystemSalt(UmlSource source) {
-		this(source, new ArrayList<String>());
+	public PSystemSalt(UmlSource source, PreprocessingArtifact preprocessing) {
+		this(source, new ArrayList<String>(), preprocessing);
 	}
 
 	public void add(String s) {
-		data.add(s);
+		data.addAll(StringLocated.expandsNewline(s));
 	}
 
 	@Override
@@ -182,7 +185,7 @@ public class PSystemSalt extends TitledDiagram implements WithSprite {
 					bloc = bloc.addString(s);
 				} while (s.equals("}") == false);
 				try {
-					final CommandExecutionResult cmdResult = cmd.execute(this, bloc);
+					final CommandExecutionResult cmdResult = cmd.execute(this, bloc, ParserPass.ONE);
 				} catch (NoSuchColorException e) {
 				}
 			} else {

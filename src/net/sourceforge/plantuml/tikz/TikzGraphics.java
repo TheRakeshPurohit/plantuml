@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import net.sourceforge.plantuml.LatexManager;
 import net.sourceforge.plantuml.klimt.UPath;
 import net.sourceforge.plantuml.klimt.color.ColorMapper;
 import net.sourceforge.plantuml.klimt.color.HColor;
@@ -56,6 +57,8 @@ import net.sourceforge.plantuml.klimt.color.HColors;
 import net.sourceforge.plantuml.klimt.drawing.eps.EpsGraphics;
 import net.sourceforge.plantuml.klimt.geom.USegment;
 import net.sourceforge.plantuml.klimt.geom.USegmentType;
+import net.sourceforge.plantuml.skin.Pragma;
+import net.sourceforge.plantuml.skin.PragmaKey;
 import net.sourceforge.plantuml.url.Url;
 import net.sourceforge.plantuml.utils.Log;
 import net.sourceforge.plantuml.version.Version;
@@ -78,13 +81,15 @@ public class TikzGraphics {
 	private final double scale;
 	private String dash = null;
 	private final ColorMapper mapper;
+	private final String preamble;
 
 	private final Map<Color, String> colornames = new LinkedHashMap<Color, String>();
 
-	public TikzGraphics(double scale, boolean withPreamble, ColorMapper mapper) {
+	public TikzGraphics(double scale, boolean withPreamble, ColorMapper mapper, Pragma pragma) {
 		this.withPreamble = withPreamble;
 		this.scale = scale;
 		this.mapper = mapper;
+		this.preamble = pragma != null ? pragma.getValue(PragmaKey.TEX_PREAMBLE) : null;
 	}
 
 	private final Map<String, Integer> styles = new LinkedHashMap<String, Integer>();
@@ -151,12 +156,15 @@ public class TikzGraphics {
 
 	public void createData(OutputStream os) throws IOException {
 		if (withPreamble) {
-			out(os, "\\documentclass{standalone}");
-			out(os, "\\usepackage{tikz}");
-			out(os, "\\usepackage{aeguill}");
+			out(os, "\\documentclass[tikz]{standalone}");
+			out(os, "\\usepackage{amsmath}");
+			out(os, "\\usepackage[T1]{fontenc}");
 			if (hasUrl) {
 				out(os, "\\usetikzlibrary{calc}");
 				out(os, "\\usepackage{hyperref}");
+			}
+			if (preamble != null && !preamble.isEmpty()) {
+				out(os, preamble);
 			}
 			out(os, "\\begin{document}");
 		}
@@ -321,7 +329,7 @@ public class TikzGraphics {
 			sb.append(",color=");
 			sb.append(getColorName(color));
 		}
-		sb.append("]{");
+		sb.append(",inner sep=0]{");
 		if (pendingUrl == null || urlIgnoreText) {
 			if (underline)
 				sb.append("\\underline{");
@@ -332,7 +340,7 @@ public class TikzGraphics {
 			if (bold)
 				sb.append("\\textbf{");
 
-			sb.append(protectText(text));
+			sb.append(LatexManager.protectText(text));
 			if (bold)
 				sb.append("}");
 
@@ -345,7 +353,7 @@ public class TikzGraphics {
 		} else {
 			appendPendingUrl(sb);
 			sb.append("{");
-			sb.append(protectText(text));
+			sb.append(LatexManager.protectText(text));
 			sb.append("}");
 		}
 		sb.append("};");
@@ -356,10 +364,10 @@ public class TikzGraphics {
 		Objects.requireNonNull(formula);
 		final StringBuilder sb = new StringBuilder("\\node at " + couple(x, y));
 		sb.append("[below right");
-		sb.append("]{");
-		sb.append("{");
+		sb.append(",inner sep=0]{");
+		sb.append("$");
 		sb.append(formula);
-		sb.append("}");
+		sb.append("$");
 		sb.append("};");
 		addCommand(sb);
 	}
@@ -381,25 +389,6 @@ public class TikzGraphics {
 			throw new IllegalArgumentException();
 		}
 		return pendingUrl.substring("latex://".length());
-	}
-
-	private String protectText(String text) {
-		text = text.replaceAll("\\\\", "\\\\\\\\");
-		text = text.replaceAll("_", "\\\\_");
-		text = text.replaceAll("\u00AB", "\\\\guillemotleft ");
-		text = text.replaceAll("\u00BB", "\\\\guillemotright ");
-		text = text.replaceAll("<", "\\\\textless ");
-		text = text.replaceAll(">", "\\\\textgreater ");
-		text = text.replaceAll("&", "\\\\&");
-		text = text.replaceAll("%", "\\\\%");
-		text = text.replace("$", "\\$");
-		text = text.replace("{", "\\{");
-		text = text.replace("}", "\\}");
-		// text = text.replaceAll("~", "\\\\~{}");
-		text = text.replace("~", "{\\raise.35ex\\hbox{$\\scriptstyle\\mathtt{\\sim}$}}");
-		// {\raise.35ex\hbox{$\scriptstyle\mathtt{\sim}$}}
-		// {\\raise.35ex\\hbox{$\\scriptstyle\\mathtt{\\sim}$}}
-		return text;
 	}
 
 	public void line(double x1, double y1, double x2, double y2) {

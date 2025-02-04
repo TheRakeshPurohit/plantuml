@@ -36,75 +36,34 @@
 package net.sourceforge.plantuml.text;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import net.sourceforge.plantuml.StringUtils;
+import net.sourceforge.plantuml.jaws.Jaws;
+import net.sourceforge.plantuml.jaws.JawsStrange;
 
 public class BackSlash {
 
+	@JawsStrange(comment = "Ok because not really used")
 	public static final String BS_BS_N = "\\n";
+	
 	public static final String NEWLINE = "\n";
 	public static final char CHAR_NEWLINE = '\n';
-	
+
 	public static final String lineSeparator() {
 		return System.lineSeparator();
 	}
 
+	@JawsStrange
 	public static char hiddenNewLine() {
-		return StringUtils.PRIVATE_BLOCK + BackSlash.CHAR_NEWLINE;
-	}
-
-	public static String convertHiddenNewLine(String s) {
-		s = s.replaceAll("(?<!\\\\)\\\\n", "" + hiddenNewLine());
-		s = s.replaceAll("\\\\\\\\n", "\\\\n");
-		return s;
-	}
-
-	public static List<String> splitHiddenNewLine(String s) {
-		return Arrays.asList(s.split("" + hiddenNewLine()));
-	}
-
-	public static String manageNewLine(String string) {
-		return string.replace(hiddenNewLine(), BackSlash.CHAR_NEWLINE);
-	}
-
-	public static List<String> getWithNewlines(CharSequence s) {
-		if (s == null) 
-			return null;
-		
-		final List<String> result = new ArrayList<>();
-		final StringBuilder current = new StringBuilder();
-		for (int i = 0; i < s.length(); i++) {
-			final char c = s.charAt(i);
-			if (c == '\\' && i < s.length() - 1) {
-				final char c2 = s.charAt(i + 1);
-				i++;
-				if (c2 == 'n') {
-					result.add(current.toString());
-					current.setLength(0);
-				} else if (c2 == 't') {
-					current.append('\t');
-				} else if (c2 == '\\') {
-					current.append(c2);
-				}
-			} else {
-				current.append(c);
-			}
-		}
-		result.add(current.toString());
-		return Collections.unmodifiableList(result);
+		return Jaws.BLOCK_E1_NEWLINE;
 	}
 
 	public static String translateBackSlashes(CharSequence s) {
-		if (s == null) 
+		if (s == null)
 			return null;
-		
-		// final String tmps = s.toString();
-		// if (tmps.indexOf('\\') == -1) {
-		// return tmps;
-		// }
+
 		final StringBuilder result = new StringBuilder();
 		for (int i = 0; i < s.length(); i++) {
 			final char c = s.charAt(i);
@@ -125,24 +84,24 @@ public class BackSlash {
 	}
 
 	public static String untranslateBackSlashes(CharSequence s) {
-		if (s == null) 
+		if (s == null)
 			return null;
-		
+
 		final StringBuilder result = new StringBuilder();
 		for (int i = 0; i < s.length(); i++) {
 			char c = s.charAt(i);
-			if (c > StringUtils.PRIVATE_BLOCK && c < '\uE07F') 
+			if (c > StringUtils.PRIVATE_BLOCK && c < '\uE07F')
 				c = (char) (c - StringUtils.PRIVATE_BLOCK);
-			
+
 			result.append(c);
 		}
 		return result.toString();
 	}
 
 	private static char translateChar(char c) {
-		if (c > 128) 
+		if (c > 128)
 			throw new IllegalArgumentException();
-		
+
 		return (char) (StringUtils.PRIVATE_BLOCK + c);
 	}
 

@@ -10,10 +10,6 @@ Generate UML diagrams from textual descriptions.
 [![GitHub forks](https://img.shields.io/github/forks/plantuml/plantuml)](https://github.com/plantuml/plantuml/network/)
 [![GitHub all releases](https://img.shields.io/sourceforge/dt/plantuml?color=blue)](https://github.com/plantuml/plantuml/releases)
 
-[![online](https://img.shields.io/endpoint?url=https://www.plantuml.com/plantuml/badge)](https://www.plantuml.com/plantuml)
-[![rate](https://img.shields.io/endpoint?url=https://www.plantuml.com/plantuml/rate)](https://www.plantuml.com/plantuml)
-[![peak](https://img.shields.io/endpoint?url=https://www.plantuml.com/plantuml/rate?peak)](https://www.plantuml.com/plantuml)
-
 [![Release (latest by date)](https://img.shields.io/github/v/release/plantuml/plantuml)](https://github.com/plantuml/plantuml/releases/latest)
 [![Release Date](https://img.shields.io/github/release-date/plantuml/plantuml?color=blue)](https://github.com/plantuml/plantuml/releases/latest)
 [![GitHub commits since latest release (by date)](https://img.shields.io/github/commits-since/plantuml/plantuml/latest)](https://github.com/plantuml/plantuml/commits/)
@@ -24,9 +20,6 @@ Generate UML diagrams from textual descriptions.
 [![GitHub last commit](https://img.shields.io/github/last-commit/plantuml/plantuml?color=chocolate)](https://github.com/plantuml/plantuml/commits/)
 [![CI](https://github.com/plantuml/plantuml/actions/workflows/ci.yml/badge.svg?color=chocolate)](https://github.com/plantuml/plantuml/actions/workflows/ci.yml)
 [![snapshot javadoc](https://img.shields.io/badge/javadoc-snapshot-chocolate.svg?logo=github)](https://plantuml.github.io/plantuml/)
-
-> [!IMPORTANT]
-> [PlantUML is **not** affected by the log4j vulnerability.](https://github.com/plantuml/plantuml/issues/826)
 
 ## ℹ️ About
 
@@ -60,7 +53,9 @@ PlantUML is a component that allows you to create various UML diagrams through s
   - [MindMap diagram](http://plantuml.com/mindmap-diagram)
   - [WBS (Work Breakdown Structure)](http://plantuml.com/wbs-diagram)
   - [Mathematical Notations (AsciiMath, JLaTeXMath)](http://plantuml.com/ascii-math)
-  - [IE/ER (Information Engineering/Entity Relationship)](http://plantuml.com/ie-diagram)
+  - Entity Relationship (ER) diagram
+    - [Information Engineering (IE) diagram](http://plantuml.com/ie-diagram)
+    - [Entity Relationship (ER) diagram (Chen's notation)](http://plantuml.com/er-diagram)
 
 ### 📣 Additional Features
 
@@ -72,6 +67,13 @@ PlantUML is a component that allows you to create various UML diagrams through s
 ### 📖 Learn More
 
 For a more detailed overview, visit [PlantUML Official Website](https://plantuml.com/).
+
+## 🛡 Security
+
+See [Security Policy](SECURITY.md) and [Security overview](https://github.com/plantuml/plantuml/security).
+
+> [!IMPORTANT]
+> [PlantUML is **not** affected by the log4j vulnerability.](https://github.com/plantuml/plantuml/issues/826)
 
 ## 🚀 Getting Started
 

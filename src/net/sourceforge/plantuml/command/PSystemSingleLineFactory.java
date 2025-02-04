@@ -35,15 +35,16 @@
  */
 package net.sourceforge.plantuml.command;
 
-import java.util.Map;
-
 import net.sourceforge.plantuml.AbstractPSystem;
 import net.sourceforge.plantuml.ErrorUml;
 import net.sourceforge.plantuml.ErrorUmlType;
+import net.sourceforge.plantuml.Previous;
 import net.sourceforge.plantuml.core.Diagram;
 import net.sourceforge.plantuml.core.DiagramType;
 import net.sourceforge.plantuml.core.UmlSource;
 import net.sourceforge.plantuml.error.PSystemErrorUtils;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.skin.UmlDiagramType;
 import net.sourceforge.plantuml.text.StringLocated;
 import net.sourceforge.plantuml.utils.LineLocation;
 import net.sourceforge.plantuml.utils.StartUtils;
@@ -51,14 +52,14 @@ import net.sourceforge.plantuml.version.IteratorCounter2;
 
 public abstract class PSystemSingleLineFactory extends PSystemAbstractFactory {
 
-	protected abstract AbstractPSystem executeLine(UmlSource source, String line);
+	protected abstract AbstractPSystem executeLine(UmlSource source, String line, PreprocessingArtifact preprocessing);
 
 	protected PSystemSingleLineFactory() {
 		super(DiagramType.UML);
 	}
 
 	@Override
-	final public Diagram createSystem(UmlSource source, Map<String, String> skinParam) {
+	final public Diagram createSystem(UmlSource source, Previous previous, PreprocessingArtifact preprocessing) {
 
 		if (source.getTotalLineCount() != 3)
 			return null;
@@ -66,7 +67,7 @@ public abstract class PSystemSingleLineFactory extends PSystemAbstractFactory {
 		final IteratorCounter2 it = source.iterator2();
 		if (source.isEmpty()) {
 			final LineLocation location = it.next().getLocation();
-			return buildEmptyError(source, location, it.getTrace());
+			return buildEmptyError(source, location, it.getTrace(), preprocessing);
 		}
 
 		final StringLocated startLine = it.next();
@@ -74,20 +75,26 @@ public abstract class PSystemSingleLineFactory extends PSystemAbstractFactory {
 			throw new UnsupportedOperationException();
 
 		if (it.hasNext() == false)
-			return buildEmptyError(source, startLine.getLocation(), it.getTrace());
+			return buildEmptyError(source, startLine.getLocation(), it.getTrace(), preprocessing);
 
 		final StringLocated s = it.next();
 		if (StartUtils.isArobaseEndDiagram(s.getString()))
-			return buildEmptyError(source, s.getLocation(), it.getTrace());
+			return buildEmptyError(source, s.getLocation(), it.getTrace(), preprocessing);
 
-		final AbstractPSystem sys = executeLine(source, s.getString());
+		final AbstractPSystem sys = executeLine(source, s.getString(), preprocessing);
 		if (sys == null) {
-			final ErrorUml err = new ErrorUml(ErrorUmlType.SYNTAX_ERROR, "Syntax Error?", 0, s.getLocation());
+			final ErrorUml err = new ErrorUml(ErrorUmlType.SYNTAX_ERROR, "Syntax Error?", 0, s.getLocation(), getUmlDiagramType());
 			// return PSystemErrorUtils.buildV1(source, err, null);
-			return PSystemErrorUtils.buildV2(source, err, null, it.getTrace());
+			return PSystemErrorUtils.buildV2(source, err, null, it.getTrace(), preprocessing);
 		}
 		return sys;
 
 	}
+	
+	@Override
+	final public UmlDiagramType getUmlDiagramType() {
+		return null;
+	}
+
 
 }

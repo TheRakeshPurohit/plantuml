@@ -62,8 +62,8 @@ public class CommandMainframe extends SingleLineCommand2<TitledDiagram> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(TitledDiagram diagram, LineLocation location, RegexResult arg) {
-		final Display label = Display.getWithNewlines(arg.get("LABEL", 0));
+	protected CommandExecutionResult executeArg(TitledDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass) {
+		final Display label = Display.getWithNewlines(diagram.getPragma(), arg.get("LABEL", 0));
 		diagram.setMainFrame(label);
 		return CommandExecutionResult.ok();
 	}

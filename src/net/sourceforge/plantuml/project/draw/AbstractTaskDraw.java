@@ -43,11 +43,14 @@ import net.sourceforge.plantuml.klimt.font.FontConfiguration;
 import net.sourceforge.plantuml.klimt.font.StringBounder;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.project.ToTaskDraw;
+import net.sourceforge.plantuml.project.core.GSide;
 import net.sourceforge.plantuml.project.core.Task;
 import net.sourceforge.plantuml.project.lang.CenterBorderColor;
 import net.sourceforge.plantuml.project.time.Day;
 import net.sourceforge.plantuml.project.timescale.TimeScale;
 import net.sourceforge.plantuml.real.Real;
+import net.sourceforge.plantuml.skin.Pragma;
+import net.sourceforge.plantuml.stereo.Stereotype;
 import net.sourceforge.plantuml.style.ClockwiseTopRightBottomLeft;
 import net.sourceforge.plantuml.style.PName;
 import net.sourceforge.plantuml.style.SName;
@@ -56,7 +59,6 @@ import net.sourceforge.plantuml.style.StyleBuilder;
 import net.sourceforge.plantuml.style.StyleSignature;
 import net.sourceforge.plantuml.style.StyleSignatureBasic;
 import net.sourceforge.plantuml.url.Url;
-import net.sourceforge.plantuml.utils.Direction;
 
 public abstract class AbstractTaskDraw implements TaskDraw {
 
@@ -65,6 +67,7 @@ public abstract class AbstractTaskDraw implements TaskDraw {
 	private int completion = 100;
 	protected Url url;
 	protected Display note;
+	protected Stereotype noteStereotype;
 	protected final TimeScale timeScale;
 	private Real y;
 	protected final String prettyDisplay;
@@ -78,11 +81,13 @@ public abstract class AbstractTaskDraw implements TaskDraw {
 		return super.toString() + " " + task;
 	}
 
-	final public void setColorsAndCompletion(CenterBorderColor colors, int completion, Url url, Display note) {
+	final public void setColorsAndCompletion(CenterBorderColor colors, int completion, Url url, Display note,
+			Stereotype noteStereotype) {
 		this.colors = colors;
 		this.completion = completion;
 		this.url = url;
 		this.note = note;
+		this.noteStereotype = noteStereotype;
 	}
 
 	public AbstractTaskDraw(TimeScale timeScale, Real y, String prettyDisplay, Day start, Task task,
@@ -157,18 +162,17 @@ public abstract class AbstractTaskDraw implements TaskDraw {
 	}
 
 	@Override
-	public final double getY(StringBounder stringBounder, Direction direction) {
+	public double getY(StringBounder stringBounder, GSide side) {
 		final Style style = getStyle();
 		final ClockwiseTopRightBottomLeft margin = style.getMargin();
-		final ClockwiseTopRightBottomLeft padding = style.getPadding();
 
 		final double y1 = margin.getTop() + getY(stringBounder).getCurrentValue();
 		final double y2 = y1 + getShapeHeight(stringBounder);
 
-		if (direction == Direction.UP)
+		if (side.isTop())
 			return y1;
 
-		if (direction == Direction.DOWN)
+		if (side.isBottom())
 			return y2;
 
 		return (y1 + y2) / 2;
@@ -189,6 +193,10 @@ public abstract class AbstractTaskDraw implements TaskDraw {
 
 	protected int getCompletion() {
 		return completion;
+	}
+
+	protected Pragma getPragma() {
+		return styleBuilder.getSkinParam().getPragma();
 	}
 
 }

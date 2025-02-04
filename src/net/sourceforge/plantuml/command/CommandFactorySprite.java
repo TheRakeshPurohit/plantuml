@@ -83,7 +83,7 @@ public final class CommandFactorySprite implements SingleMultiFactoryCommand<Wit
 
 			@Override
 			protected CommandExecutionResult executeArg(final WithSprite system, LineLocation location,
-					RegexResult arg) {
+					RegexResult arg, ParserPass currentPass) {
 				return executeInternal(system, arg, Arrays.asList((String) arg.get("DATA", 0)));
 			}
 
@@ -99,7 +99,8 @@ public final class CommandFactorySprite implements SingleMultiFactoryCommand<Wit
 				return "^end[%s]?sprite|\\}$";
 			}
 
-			protected CommandExecutionResult executeNow(final WithSprite system, BlocLines lines) {
+			@Override
+			protected CommandExecutionResult executeNow(final WithSprite system, BlocLines lines, ParserPass currentPass) {
 				lines = lines.trim().removeEmptyLines();
 				final RegexResult line0 = getStartingPattern().matcher(lines.getFirst().getTrimmed().getString());
 

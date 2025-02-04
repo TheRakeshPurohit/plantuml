@@ -40,6 +40,7 @@ import java.util.regex.Matcher;
 import net.sourceforge.plantuml.activitydiagram3.ActivityDiagram3;
 import net.sourceforge.plantuml.activitydiagram3.ftile.BoxStyle;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.klimt.color.ColorParser;
 import net.sourceforge.plantuml.klimt.color.ColorType;
@@ -117,8 +118,8 @@ public class CommandActivity3 extends SingleLineCommand2<ActivityDiagram3> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(ActivityDiagram3 diagram, LineLocation location, RegexResult arg)
-			throws NoSuchColorException {
+	protected CommandExecutionResult executeArg(ActivityDiagram3 diagram, LineLocation location, RegexResult arg,
+			ParserPass currentPass) throws NoSuchColorException {
 
 		final Url url;
 		if (arg.get("URL", 0) == null) {
@@ -138,11 +139,14 @@ public class CommandActivity3 extends SingleLineCommand2<ActivityDiagram3> {
 			stereotype = Stereotype.build(stereo);
 			colors = colors.applyStereotype(stereotype, diagram.getSkinParam(), ColorParam.activityBackground);
 		}
+
+		BoxStyle.checkDeprecatedWarning(diagram, arg.get("STYLE", 0));
+
 		BoxStyle style = BoxStyle.fromString(arg.get("STEREO", 0));
 		if (style == BoxStyle.PLAIN)
 			style = BoxStyle.fromString(arg.get("STYLE", 0));
 
-		final Display display = Display.getWithNewlines2(arg.get("LABEL", 0));
+		final Display display = Display.getWithNewlines2(diagram.getPragma(), arg.get("LABEL", 0));
 		return diagram.addActivity(display, style, url, colors, stereotype);
 	}
 

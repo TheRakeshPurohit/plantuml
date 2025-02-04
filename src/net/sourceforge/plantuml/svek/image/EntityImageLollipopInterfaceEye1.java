@@ -57,7 +57,7 @@ import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.svek.AbstractEntityImage;
 import net.sourceforge.plantuml.svek.Bibliotekon;
 import net.sourceforge.plantuml.svek.ShapeType;
-import net.sourceforge.plantuml.svek.SvekLine;
+import net.sourceforge.plantuml.svek.SvekEdge;
 import net.sourceforge.plantuml.url.Url;
 
 public class EntityImageLollipopInterfaceEye1 extends AbstractEntityImage {
@@ -67,12 +67,12 @@ public class EntityImageLollipopInterfaceEye1 extends AbstractEntityImage {
 	private final Bibliotekon bibliotekon;
 	final private Url url;
 
-	public EntityImageLollipopInterfaceEye1(Entity entity, ISkinParam skinParam, Bibliotekon bibliotekon) {
-		super(entity, skinParam);
+	public EntityImageLollipopInterfaceEye1(Entity entity, Bibliotekon bibliotekon) {
+		super(entity);
 		this.bibliotekon = bibliotekon;
 		final Stereotype stereotype = entity.getStereotype();
 		this.desc = entity.getDisplay().create(FontConfiguration.create(getSkinParam(), FontParam.CLASS, stereotype),
-				HorizontalAlignment.CENTER, skinParam);
+				HorizontalAlignment.CENTER, getSkinParam());
 		this.url = entity.getUrl99();
 
 	}
@@ -98,10 +98,10 @@ public class EntityImageLollipopInterfaceEye1 extends AbstractEntityImage {
 
 		XPoint2D pos = bibliotekon.getNode(getEntity()).getPosition();
 
-		final List<SvekLine> lines = bibliotekon.getAllLineConnectedTo(getEntity());
+		final List<SvekEdge> lines = bibliotekon.getAllLineConnectedTo(getEntity());
 		final UTranslate reverse = UTranslate.point(pos).reverse();
 		final ConnectedCircle connectedCircle = new ConnectedCircle(SIZE / 2);
-		for (SvekLine line : lines) {
+		for (SvekEdge line : lines) {
 			XPoint2D pt = line.getMyPoint(getEntity());
 			pt = reverse.getTranslated(pt);
 			connectedCircle.addSecondaryConnection(pt);

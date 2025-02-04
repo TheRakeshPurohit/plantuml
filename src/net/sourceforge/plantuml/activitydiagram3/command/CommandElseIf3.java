@@ -38,6 +38,7 @@ package net.sourceforge.plantuml.activitydiagram3.command;
 import net.sourceforge.plantuml.activitydiagram3.ActivityDiagram3;
 import net.sourceforge.plantuml.activitydiagram3.LinkRendering;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.descdiagram.command.CommandLinkElement;
 import net.sourceforge.plantuml.klimt.color.ColorParser;
@@ -101,7 +102,7 @@ public class CommandElseIf3 extends SingleLineCommand2<ActivityDiagram3> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(ActivityDiagram3 diagram, LineLocation location, RegexResult arg)
+	protected CommandExecutionResult executeArg(ActivityDiagram3 diagram, LineLocation location, RegexResult arg, ParserPass currentPass)
 			throws NoSuchColorException {
 		final String s = arg.get("COLOR", 0);
 		final HColor color = s == null ? null : diagram.getSkinParam().getIHtmlColorSet().getColor(s);
@@ -114,7 +115,7 @@ public class CommandElseIf3 extends SingleLineCommand2<ActivityDiagram3> {
 		final LinkRendering incoming = CommandBackward3.getBackRendering(diagram, arg, "INCOMING");
 		final LinkRendering when = CommandBackward3.getBackRendering(diagram, arg, "WHEN");
 
-		return diagram.elseIf(incoming, Display.getWithNewlines(test), when, color);
+		return diagram.elseIf(incoming, Display.getWithNewlines(diagram.getPragma(), test), when, color);
 	}
 
 }

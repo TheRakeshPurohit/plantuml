@@ -139,14 +139,20 @@ public class SheetBlock1 extends AbstractTextBlock implements TextBlock, Atom, S
 				sea.add(atom);
 
 			sea.doAlign();
+			if (stringBounder.matchesProperty("TIKZ")) {
+				sea.doAlignTikz();
+			}
 			sea.translateMinYto(y);
-			sea.exportAllPositions(positions);
 			final double width = sea.getWidth();
 			widths.put(stripe, width);
 			minMax = sea.update(minMax);
 			final double height = sea.getHeight();
 			heights.put(stripe, height);
 			y += height;
+			if (stringBounder.matchesProperty("TIKZ")) {
+				sea.doAlignTikzBaseline();
+			}
+			sea.exportAllPositions(positions);
 		}
 		final int coef;
 		if (sheet.getHorizontalAlignment() == HorizontalAlignment.CENTER)

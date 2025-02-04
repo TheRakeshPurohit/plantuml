@@ -5,12 +5,12 @@
  * (C) Copyright 2009-2024, Arnaud Roques
  *
  * Project Info:  https://plantuml.com
- * 
+ *
  * If you like this project or if you find it useful, you can support us at:
- * 
+ *
  * https://plantuml.com/patreon (only 1$ per month!)
  * https://plantuml.com/paypal
- * 
+ *
  * This file is part of PlantUML.
  *
  * PlantUML is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  *
  *
  * Original Author:  Arnaud Roques
- * 
+ *
  *
  */
 package net.sourceforge.plantuml.ebnf;
@@ -53,6 +53,8 @@ import net.sourceforge.plantuml.klimt.font.FontConfiguration;
 import net.sourceforge.plantuml.klimt.geom.HorizontalAlignment;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.klimt.shape.TextBlockUtils;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.skin.PragmaKey;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
 import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.SName;
@@ -64,8 +66,8 @@ public class PSystemEbnf extends TitledDiagram {
 
 	private final List<TextBlockable> expressions = new ArrayList<>();
 
-	public PSystemEbnf(UmlSource source) {
-		super(source, UmlDiagramType.EBNF, null);
+	public PSystemEbnf(UmlSource source, PreprocessingArtifact preprocessing) {
+		super(source, UmlDiagramType.EBNF, null, preprocessing);
 	}
 
 	public DiagramDescription getDescription() {
@@ -73,7 +75,7 @@ public class PSystemEbnf extends TitledDiagram {
 	}
 
 	public CommandExecutionResult addBlocLines(BlocLines blines, String commentAbove, String commentBelow) {
-		final boolean isCompact = getPragma().isDefine("compact");
+		final boolean isCompact = getPragma().isDefine(PragmaKey.COMPACT);
 		final CharInspector it = blines.inspector();
 		final EbnfExpression tmp1 = EbnfExpression.create(it, isCompact, commentAbove, commentBelow);
 		if (tmp1.isEmpty())
@@ -86,7 +88,7 @@ public class PSystemEbnf extends TitledDiagram {
 	public CommandExecutionResult addNote(final Display note, Colors colors) {
 		expressions.add(new TextBlockable() {
 			@Override
-			public TextBlock getUDrawable(ISkinParam skinParam) {
+			public TextBlock getUDrawable(ISkinParam skinParam, PreprocessingArtifact preprocessing) {
 				final FloatingNote f = FloatingNote.create(note, skinParam, SName.ebnf);
 				return TextBlockUtils.withMargin(f, 0, 0, 5, 15);
 			}
@@ -110,9 +112,10 @@ public class PSystemEbnf extends TitledDiagram {
 			return TextBlockUtils.addBackcolor(tmp, null);
 		}
 
-		TextBlock result = expressions.get(0).getUDrawable(getSkinParam());
+		TextBlock result = expressions.get(0).getUDrawable(getSkinParam(), getPreprocessingArtifact());
 		for (int i = 1; i < expressions.size(); i++)
-			result = TextBlockUtils.mergeTB(result, expressions.get(i).getUDrawable(getSkinParam()),
+			result = TextBlockUtils.mergeTB(result,
+					expressions.get(i).getUDrawable(getSkinParam(), getPreprocessingArtifact()),
 					HorizontalAlignment.LEFT);
 		return TextBlockUtils.addBackcolor(result, null);
 	}
