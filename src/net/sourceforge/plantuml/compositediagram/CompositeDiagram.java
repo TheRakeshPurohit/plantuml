@@ -5,12 +5,12 @@
  * (C) Copyright 2009-2024, Arnaud Roques
  *
  * Project Info:  https://plantuml.com
- * 
+ *
  * If you like this project or if you find it useful, you can support us at:
- * 
+ *
  * https://plantuml.com/patreon (only 1$ per month!)
  * https://plantuml.com/paypal
- * 
+ *
  * This file is part of PlantUML.
  *
  * PlantUML is free software; you can redistribute it and/or modify it
@@ -30,22 +30,22 @@
  *
  *
  * Original Author:  Arnaud Roques
- * 
+ *
  *
  */
 package net.sourceforge.plantuml.compositediagram;
 
-import java.util.Map;
-
+import net.sourceforge.plantuml.Previous;
 import net.sourceforge.plantuml.classdiagram.AbstractEntityDiagram;
 import net.sourceforge.plantuml.core.UmlSource;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
 
 public class CompositeDiagram extends AbstractEntityDiagram {
 	// ::remove folder when __HAXE__
 
-	public CompositeDiagram(UmlSource source, Map<String, String> skinParam) {
-		super(source, UmlDiagramType.COMPOSITE, skinParam);
+	public CompositeDiagram(UmlSource source, Previous previous, PreprocessingArtifact preprocessingArtifact) {
+		super(source, UmlDiagramType.COMPOSITE, previous, preprocessingArtifact);
 	}
 
 //	@Override

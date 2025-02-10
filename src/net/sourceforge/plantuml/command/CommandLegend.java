@@ -67,8 +67,8 @@ public class CommandLegend extends SingleLineCommand2<TitledDiagram> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(TitledDiagram diagram, LineLocation location, RegexResult arg) {
-		final Display s = Display.getWithNewlines(arg.getLazzy("LEGEND", 0));
+	protected CommandExecutionResult executeArg(TitledDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass) {
+		final Display s = Display.getWithNewlines(diagram.getPragma(), arg.getLazzy("LEGEND", 0));
 		diagram.setLegend(DisplayPositioned.single(s, HorizontalAlignment.CENTER, VerticalAlignment.BOTTOM));
 		return CommandExecutionResult.ok();
 	}

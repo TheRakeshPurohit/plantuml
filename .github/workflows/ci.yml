@@ -5,13 +5,13 @@ on:
   pull_request:
     types: [ opened, synchronize, reopened ]
     paths-ignore:
-      - '*.md'
+      - '**.md'
       - 'docs/**'
   push:
     branches:
       - master
     paths-ignore:
-      - '*.md'
+      - '**.md'
       - 'docs/**'
   workflow_dispatch:
 
@@ -204,7 +204,7 @@ jobs:
         run: gradle javadoc
 
       - name: Deploy Javadoc to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/docs/javadoc
@@ -329,7 +329,7 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build/push container image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
@@ -338,3 +338,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
+
+  create_native_image_release:
+    needs: [ workflow_config, upload ]
+    if: needs.workflow_config.outputs.do_release == 'true'
+    uses: ./.github/workflows/native-image-release.yml

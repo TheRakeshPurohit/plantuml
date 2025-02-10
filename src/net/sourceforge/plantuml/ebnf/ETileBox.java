@@ -35,6 +35,9 @@
  */
 package net.sourceforge.plantuml.ebnf;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import net.sourceforge.plantuml.activitydiagram3.ftile.vcompact.FloatingNote;
 import net.sourceforge.plantuml.klimt.UStroke;
 import net.sourceforge.plantuml.klimt.UTranslate;
@@ -50,11 +53,14 @@ import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.klimt.shape.TextBlockUtils;
 import net.sourceforge.plantuml.klimt.shape.URectangle;
 import net.sourceforge.plantuml.klimt.shape.UText;
+import net.sourceforge.plantuml.preproc.ConfigurationStore;
+import net.sourceforge.plantuml.preproc.OptionKey;
 import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.PName;
 import net.sourceforge.plantuml.style.SName;
 import net.sourceforge.plantuml.style.Style;
 import net.sourceforge.plantuml.utils.Direction;
+import net.sourceforge.plantuml.utils.I18n;
 
 public class ETileBox extends ETile {
 
@@ -65,20 +71,36 @@ public class ETileBox extends ETile {
 	private final HColorSet colorSet;
 	private final Symbol symbol;
 	private final ISkinParam skinParam;
+	private final ConfigurationStore<OptionKey> option;
 	private String commentAbove;
 	private String commentBelow;
 
+	private static final Map<String, String> VALUE_MAP = new HashMap<>();
+
+	static {
+		VALUE_MAP.put("\\b", "wordBoundary");
+		VALUE_MAP.put("\\B", "nonWordBoundary");
+		VALUE_MAP.put("\\d", "digit");
+		VALUE_MAP.put("\\D", "nonDigit");
+		VALUE_MAP.put("\\w", "word");
+		VALUE_MAP.put("\\W", "nonWord");
+		VALUE_MAP.put("\\s", "whitespace");
+		VALUE_MAP.put("\\S", "nonWhitespace");
+		VALUE_MAP.put(".", "anyChar");
+	}
+
 	public ETileBox mergeWith(ETileBox other) {
-		return new ETileBox(this.value + other.value, symbol, fc, style, colorSet, skinParam);
+		return new ETileBox(this.value + other.value, symbol, fc, style, colorSet, skinParam, option);
 	}
 
 	public ETileBox(String value, Symbol symbol, FontConfiguration fc, Style style, HColorSet colorSet,
-			ISkinParam skinParam) {
+			ISkinParam skinParam, ConfigurationStore<OptionKey> option) {
 		this.symbol = symbol;
 		this.skinParam = skinParam;
-		this.value = value;
+		this.option = option;
+		this.value = getDrawValue(value);
 		this.fc = fc;
-		this.utext = UText.build(value, fc);
+		this.utext = UText.build(this.value, fc);
 		this.style = style;
 		this.colorSet = colorSet;
 	}
@@ -166,8 +188,8 @@ public class ETileBox extends ETile {
 //			ug.apply(new UTranslate(posxBox + 1, posy + 1)).apply(lineColor).apply(UStroke.withThickness(0.5)).draw(rect2);
 		} else {
 			final URectangle rect = URectangle.build(dimBox).rounded(10);
-			ug.apply(new UTranslate(posxBox, posy)).apply(lineColor).apply(backgroundColor.bg()).apply(UStroke.withThickness(1.5))
-					.draw(rect);
+			ug.apply(new UTranslate(posxBox, posy)).apply(lineColor).apply(backgroundColor.bg())
+					.apply(UStroke.withThickness(1.5)).draw(rect);
 		}
 
 		ug.apply(new UTranslate(5 + posxBox, posy + 5 + dimText.getHeight() - utext.getDescent(stringBounder)))
@@ -185,8 +207,8 @@ public class ETileBox extends ETile {
 		}
 
 		if (posxBox > 0) {
-			drawHlineDirected(ug, getH1(stringBounder), 0, posxBox, .5);
-			drawHlineDirected(ug, getH1(stringBounder), posxBox + dimBox.getWidth(), dim.getWidth(), .5);
+			drawHlineDirected(ug, getH1(stringBounder), 0, posxBox, .5, 25);
+			drawHlineDirected(ug, getH1(stringBounder), posxBox + dimBox.getWidth(), dim.getWidth(), .5, 25);
 		}
 
 	}
@@ -195,8 +217,8 @@ public class ETileBox extends ETile {
 		if (commentAbove == null)
 			return TextBlockUtils.EMPTY_TEXT_BLOCK;
 
-		final FloatingNote note = FloatingNote.createOpale(Display.getWithNewlines(commentAbove), skinParam,
-				SName.ebnf);
+		final FloatingNote note = FloatingNote.createOpale(Display.getWithNewlines(skinParam.getPragma(), commentAbove),
+				skinParam, SName.ebnf);
 		final XDimension2D dim = note.calculateDimension(stringBounder);
 		final double pos = dim.getWidth() * .5;
 		XPoint2D pp1 = new XPoint2D(pos, dim.getHeight());
@@ -209,8 +231,8 @@ public class ETileBox extends ETile {
 		if (commentBelow == null)
 			return TextBlockUtils.EMPTY_TEXT_BLOCK;
 
-		final FloatingNote note = FloatingNote.createOpale(Display.getWithNewlines(commentBelow), skinParam,
-				SName.ebnf);
+		final FloatingNote note = FloatingNote.createOpale(Display.getWithNewlines(skinParam.getPragma(), commentBelow),
+				skinParam, SName.ebnf);
 		final XDimension2D dim = note.calculateDimension(stringBounder);
 		final double pos = dim.getWidth() * .5;
 		XPoint2D pp1 = new XPoint2D(pos, 0);
@@ -231,6 +253,14 @@ public class ETileBox extends ETile {
 
 	public final Symbol getSymbol() {
 		return symbol;
+	}
+
+	private String getDrawValue(String value) {
+		if (!Boolean.parseBoolean(option.getValue(OptionKey.USE_DESCRIPTIVE_NAMES)) || !VALUE_MAP.containsKey(value))
+			return value;
+
+		final String language = option.getValue(OptionKey.LANGUAGE);
+		return I18n.getLocalizedValue(language, "ebnf." + VALUE_MAP.get(value), value);
 	}
 
 }

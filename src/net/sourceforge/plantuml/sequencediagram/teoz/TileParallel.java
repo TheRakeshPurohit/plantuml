@@ -71,9 +71,6 @@ public class TileParallel extends CommonTile {
 	@Override
 	final protected void callbackY_internal(TimeHook y) {
 		super.callbackY_internal(y);
-		for (Tile tile : tiles)
-			tile.callbackY(y);
-
 	}
 
 	public void add(Tile tile) {
@@ -176,6 +173,10 @@ public class TileParallel extends CommonTile {
 				return true;
 
 		return false;
+	}
+
+	protected List<Tile> getTiles() {
+		return tiles;
 	}
 
 }

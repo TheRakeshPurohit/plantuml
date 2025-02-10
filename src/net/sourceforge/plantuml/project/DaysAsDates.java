@@ -49,6 +49,11 @@ public class DaysAsDates implements Iterable<Day> {
 		this.date2 = date2;
 	}
 
+	@Override
+	public String toString() {
+		return "{ " + date1 + " , " + date2 + " }";
+	}
+
 	public DaysAsDates(GanttDiagram gantt, Day date1, int count) {
 		this.date1 = date1;
 		Day tmp = date1;

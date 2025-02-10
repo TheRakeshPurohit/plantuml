@@ -51,7 +51,6 @@ import net.sourceforge.plantuml.klimt.geom.HorizontalAlignment;
 import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.klimt.shape.UEllipse;
-import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.PName;
 import net.sourceforge.plantuml.style.SName;
 import net.sourceforge.plantuml.style.Style;
@@ -67,25 +66,23 @@ public class EntityImageLollipopInterface extends AbstractEntityImage {
 	private static final int SIZE = 10;
 
 	private final TextBlock desc;
-	private final SName sname;
 	private final Url url;
 
 	public StyleSignature getSignature() {
-		return StyleSignatureBasic.of(SName.root, SName.element, sname, SName.circle).withTOBECHANGED(getStereo());
+		return StyleSignatureBasic.of(SName.root, SName.element, getStyleName(), SName.circle).withTOBECHANGED(getStereo());
 	}
 
 	private UStroke getUStroke() {
 		return UStroke.withThickness(1.5);
 	}
 
-	public EntityImageLollipopInterface(Entity entity, ISkinParam skinParam, SName sname) {
-		super(entity, skinParam);
-		this.sname = sname;
+	public EntityImageLollipopInterface(Entity entity) {
+		super(entity);
 
 		final FontConfiguration fc = FontConfiguration.create(getSkinParam(),
-				getSignature().getMergedStyle(skinParam.getCurrentStyleBuilder()));
+				getSignature().getMergedStyle(getSkinParam().getCurrentStyleBuilder()));
 
-		this.desc = entity.getDisplay().create(fc, HorizontalAlignment.CENTER, skinParam);
+		this.desc = entity.getDisplay().create(fc, HorizontalAlignment.CENTER, getSkinParam());
 		this.url = entity.getUrl99();
 
 	}
@@ -99,7 +96,7 @@ public class EntityImageLollipopInterface extends AbstractEntityImage {
 		final Style style = getSignature().getMergedStyle(getSkinParam().getCurrentStyleBuilder());
 		final HColor backgroundColor = style.value(PName.BackGroundColor).asColor(getSkinParam().getIHtmlColorSet());
 		final HColor borderColor = style.value(PName.LineColor).asColor(getSkinParam().getIHtmlColorSet());
-		final double shadow = style.value(PName.Shadowing).asDouble();
+		final double shadow = style.getShadowing();
 
 		final UEllipse circle;
 		if (getEntity().getLeafType() == LeafType.LOLLIPOP_HALF) {

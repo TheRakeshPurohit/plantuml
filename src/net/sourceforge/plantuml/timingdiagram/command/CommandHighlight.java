@@ -36,6 +36,7 @@
 package net.sourceforge.plantuml.timingdiagram.command;
 
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.klimt.color.ColorParser;
 import net.sourceforge.plantuml.klimt.color.ColorType;
@@ -84,11 +85,11 @@ public class CommandHighlight extends SingleLineCommand2<TimingDiagram> {
 	}
 
 	@Override
-	final protected CommandExecutionResult executeArg(TimingDiagram diagram, LineLocation location, RegexResult arg)
+	final protected CommandExecutionResult executeArg(TimingDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass)
 			throws NoSuchColorException {
 		final TimeTick tickFrom = TimeTickBuilder.parseTimeTick("FROM", arg, diagram);
 		final TimeTick tickTo = TimeTickBuilder.parseTimeTick("TO", arg, diagram);
-		final Display display = Display.getWithNewlines(arg.get("CAPTION", 0));
+		final Display display = Display.getWithNewlines(diagram.getPragma(), arg.get("CAPTION", 0));
 		final Colors colors = color().getColor(arg, diagram.getSkinParam().getIHtmlColorSet());
 		return diagram.highlight(tickFrom, tickTo, display, colors);
 	}

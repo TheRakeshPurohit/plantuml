@@ -6,9 +6,10 @@
 .idea
 *.iml
 out
-
+/bin
 #vscode files
 **/bin/
+/.vs
 
 # Ant result file
 plantuml.jar
@@ -27,3 +28,9 @@ build/
 
 # for jenv users
 .java-version
+
+# output of dev tests
+/outputdev
+
+*.patch
+**/*.class

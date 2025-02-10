@@ -51,13 +51,19 @@ class MessageSelfArrow extends Arrow {
 	private final LivingParticipantBox p1;
 	private final double deltaX;
 	private final double deltaY;
+	private final boolean isReverse;
+	private final int currentLevel;
+	private final double halfLifeWidth;
 
 	public MessageSelfArrow(double startingY, Rose skin, ArrowComponent arrow, LivingParticipantBox p1, double deltaY,
-			Url url, double deltaX) {
+													Url url, double deltaX, boolean isReverse, int currentLevel, double halfLifeWidth) {
 		super(startingY, skin, arrow, url);
 		this.p1 = p1;
 		this.deltaY = deltaY;
 		this.deltaX = deltaX;
+		this.isReverse = isReverse;
+		this.currentLevel = currentLevel;
+		this.halfLifeWidth = halfLifeWidth;
 	}
 
 	@Override
@@ -67,19 +73,24 @@ class MessageSelfArrow extends Arrow {
 
 	@Override
 	public double getPreferredWidth(StringBounder stringBounder) {
-		return getArrowComponent().getPreferredWidth(stringBounder);
+		double length = p1.getLiveThicknessAt(stringBounder, getArrowYStartLevel(stringBounder)).getSegment().getLength();
+		return getArrowComponent().getPreferredWidth(stringBounder) + length;
 	}
 
 	@Override
 	protected void drawInternalU(UGraphic ug, double maxX, Context2D context) {
+		startGroup(ug);
 		final StringBounder stringBounder = ug.getStringBounder();
 		ug = ug.apply(new UTranslate(getStartingX(stringBounder), getStartingY() + deltaY));
 		final Area area = new Area(
 				new XDimension2D(getPreferredWidth(stringBounder), getPreferredHeight(stringBounder)));
 		area.setDeltaX1(deltaY);
+		area.setLevel(currentLevel);
+		area.setLiveDeltaSize(halfLifeWidth);
 		startUrl(ug);
 		getArrowComponent().drawU(ug, area, context);
 		endUrl(ug);
+		endGroup(ug);
 	}
 
 	@Override
@@ -92,7 +103,11 @@ class MessageSelfArrow extends Arrow {
 		// }
 		final double pos2 = p1.getLiveThicknessAt(stringBounder, getArrowYStartLevel(stringBounder)).getSegment()
 				.getPos2();
-		return pos2 + deltaX;
+		if (isReverse) {
+
+			return pos2  - getPreferredWidth(stringBounder);
+		} else
+			return pos2 + deltaX;
 	}
 
 	@Override
@@ -140,7 +155,21 @@ class MessageSelfArrow extends Arrow {
 	}
 
 	@Override
+	protected String getParticipant1Code() {
+		return p1.getParticipantCode();
+	}
+
+	@Override
+	protected String getParticipant2Code() {
+		return getParticipant1Code();
+	}
+
+	@Override
 	public double getActualWidth(StringBounder stringBounder) {
 		return getPreferredWidth(stringBounder);
+	}
+
+	public boolean isReverse() {
+		return isReverse;
 	}
 }

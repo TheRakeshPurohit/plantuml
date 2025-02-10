@@ -37,20 +37,22 @@ package net.sourceforge.plantuml.project;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
+import net.sourceforge.plantuml.Previous;
 import net.sourceforge.plantuml.command.Command;
 import net.sourceforge.plantuml.command.CommandNope;
 import net.sourceforge.plantuml.command.CommonCommands;
 import net.sourceforge.plantuml.command.PSystemCommandFactory;
 import net.sourceforge.plantuml.core.DiagramType;
 import net.sourceforge.plantuml.core.UmlSource;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
 import net.sourceforge.plantuml.project.command.CommandColorTask;
 import net.sourceforge.plantuml.project.command.CommandFootbox;
 import net.sourceforge.plantuml.project.command.CommandGanttArrow;
 import net.sourceforge.plantuml.project.command.CommandGanttArrow2;
 import net.sourceforge.plantuml.project.command.CommandGroupEnd;
 import net.sourceforge.plantuml.project.command.CommandGroupStart;
+import net.sourceforge.plantuml.project.command.CommandHideClosed;
 import net.sourceforge.plantuml.project.command.CommandHideResourceFootbox;
 import net.sourceforge.plantuml.project.command.CommandHideResourceName;
 import net.sourceforge.plantuml.project.command.CommandLabelOnColumn;
@@ -74,6 +76,7 @@ import net.sourceforge.plantuml.project.lang.SubjectResource;
 import net.sourceforge.plantuml.project.lang.SubjectSeparator;
 import net.sourceforge.plantuml.project.lang.SubjectTask;
 import net.sourceforge.plantuml.project.lang.SubjectToday;
+import net.sourceforge.plantuml.skin.UmlDiagramType;
 import net.sourceforge.plantuml.style.CommandStyleImport;
 import net.sourceforge.plantuml.style.CommandStyleMultilinesCSS;
 
@@ -116,6 +119,7 @@ public class GanttDiagramFactory extends PSystemCommandFactory {
 		cmds.add(new CommandLabelOnColumn());
 		cmds.add(new CommandHideResourceName());
 		cmds.add(new CommandHideResourceFootbox());
+		cmds.add(new CommandHideClosed());
 		cmds.add(new CommandTaskCompleteDefault());
 	}
 
@@ -146,8 +150,14 @@ public class GanttDiagramFactory extends PSystemCommandFactory {
 	}
 
 	@Override
-	public GanttDiagram createEmptyDiagram(UmlSource source, Map<String, String> skinParam) {
-		return new GanttDiagram(source);
+	public GanttDiagram createEmptyDiagram(UmlSource source, Previous previous, PreprocessingArtifact preprocessing) {
+		return new GanttDiagram(source, preprocessing);
 	}
+	
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return UmlDiagramType.GANTT;
+	}
+
 
 }

@@ -35,17 +35,41 @@
  */
 package net.sourceforge.plantuml.project.command;
 
+import net.sourceforge.plantuml.activitydiagram3.ActivityDiagram3;
+import net.sourceforge.plantuml.activitydiagram3.command.CommandNoteLong3;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.command.CommandMultilines;
+import net.sourceforge.plantuml.command.CommandMultilines2;
+import net.sourceforge.plantuml.command.MultilinesStrategy;
+import net.sourceforge.plantuml.command.ParserPass;
+import net.sourceforge.plantuml.command.Trim;
 import net.sourceforge.plantuml.klimt.color.NoSuchColorException;
 import net.sourceforge.plantuml.klimt.creole.Display;
 import net.sourceforge.plantuml.project.GanttDiagram;
+import net.sourceforge.plantuml.regex.IRegex;
+import net.sourceforge.plantuml.regex.RegexConcat;
+import net.sourceforge.plantuml.regex.RegexLeaf;
+import net.sourceforge.plantuml.regex.RegexResult;
+import net.sourceforge.plantuml.stereo.Stereotag;
+import net.sourceforge.plantuml.stereo.Stereotype;
+import net.sourceforge.plantuml.stereo.StereotypePattern;
 import net.sourceforge.plantuml.utils.BlocLines;
 
-public class CommandNoteBottom extends CommandMultilines<GanttDiagram> {
+public class CommandNoteBottom extends CommandMultilines2<GanttDiagram> {
 
 	public CommandNoteBottom() {
-		super("^note[%s]*bottom$");
+		super(getRegexConcat(), MultilinesStrategy.REMOVE_STARTING_QUOTE, Trim.BOTH);
+	}
+
+	static IRegex getRegexConcat() {
+		return RegexConcat.build(CommandNoteBottom.class.getName(), RegexLeaf.start(), //
+				new RegexLeaf("TYPE", "(note)"), //
+				RegexLeaf.spaceZeroOrMore(), //
+				new RegexLeaf("POSITION", "(bottom)"), //
+				RegexLeaf.spaceZeroOrMore(), //
+				new RegexLeaf("TAGS", Stereotag.pattern() + "?"), //
+				StereotypePattern.optional("STEREO"), //
+				RegexLeaf.end());
 	}
 
 	@Override
@@ -53,14 +77,23 @@ public class CommandNoteBottom extends CommandMultilines<GanttDiagram> {
 		return "^end[%s]*note$";
 	}
 
-	public CommandExecutionResult execute(GanttDiagram diagram, BlocLines lines) throws NoSuchColorException {
+	@Override
+	protected CommandExecutionResult executeNow(GanttDiagram diagram, BlocLines lines, ParserPass currentPass)
+			throws NoSuchColorException {
+		final RegexResult line0 = getStartingPattern().matcher(lines.getFirst().getTrimmed().getString());
 		lines = lines.subExtract(1, 1);
 		lines = lines.removeEmptyColumns();
 		final Display strings = lines.toDisplay();
-		if (strings.size() > 0) {
-			return diagram.addNote(strings);
-		}
-		return CommandExecutionResult.error("No note defined");
+		if (strings.size() == 0)
+			return CommandExecutionResult.error("No note defined");
+
+		final String stereotypeString = line0.get("STEREO", 0);
+		Stereotype stereotype = null;
+		if (stereotypeString != null)
+			stereotype = Stereotype.build(stereotypeString);
+
+		return diagram.addNote(strings, stereotype);
+
 	}
 
 }

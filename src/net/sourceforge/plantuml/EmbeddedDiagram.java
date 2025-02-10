@@ -5,12 +5,12 @@
  * (C) Copyright 2009-2024, Arnaud Roques
  *
  * Project Info:  https://plantuml.com
- * 
+ *
  * If you like this project or if you find it useful, you can support us at:
- * 
+ *
  * https://plantuml.com/patreon (only 1$ per month!)
  * https://plantuml.com/paypal
- * 
+ *
  * This file is part of PlantUML.
  *
  * PlantUML is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  *
  *
  * Original Author:  Arnaud Roques
- * 
+ *
  *
  */
 package net.sourceforge.plantuml;
@@ -121,6 +121,9 @@ public class EmbeddedDiagram extends AbstractTextBlock implements Line, Atom {
 
 		if (s.equals(EMBEDDED_START + "chronology"))
 			return "chronology";
+
+		if (s.equals(EMBEDDED_START + "chen"))
+			return "chen";
 
 		return null;
 	}
@@ -228,7 +231,9 @@ public class EmbeddedDiagram extends AbstractTextBlock implements Line, Atom {
 	}
 
 	private Diagram getSystem() throws IOException, InterruptedException {
-		final BlockUml blockUml = new BlockUml(list, Defines.createEmpty(), skinParam, null, null);
+		final Previous previous = skinParam == null ? Previous.createEmpty()
+				: Previous.createFrom(skinParam.values());
+		final BlockUml blockUml = new BlockUml(list, Defines.createEmpty(), previous, null, null);
 		return blockUml.getDiagram();
 
 	}

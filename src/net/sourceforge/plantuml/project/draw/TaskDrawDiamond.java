@@ -47,8 +47,9 @@ import net.sourceforge.plantuml.klimt.shape.UPolygon;
 import net.sourceforge.plantuml.klimt.sprite.SpriteContainerEmpty;
 import net.sourceforge.plantuml.project.LabelStrategy;
 import net.sourceforge.plantuml.project.ToTaskDraw;
+import net.sourceforge.plantuml.project.core.GArrowType;
+import net.sourceforge.plantuml.project.core.GSide;
 import net.sourceforge.plantuml.project.core.Task;
-import net.sourceforge.plantuml.project.core.TaskAttribute;
 import net.sourceforge.plantuml.project.lang.CenterBorderColor;
 import net.sourceforge.plantuml.project.time.Day;
 import net.sourceforge.plantuml.project.timescale.TimeScale;
@@ -79,6 +80,10 @@ public class TaskDrawDiamond extends AbstractTaskDraw {
 
 	@Override
 	protected double getShapeHeight(StringBounder stringBounder) {
+//		final String displayString = getTask().getDisplayString();
+//		if (displayString == null)
+//			return getDiamondHeight();
+
 		final TextBlock title = getTitle();
 		final XDimension2D titleDim = title.calculateDimension(stringBounder);
 		return Math.max(titleDim.getHeight(), getDiamondHeight());
@@ -127,8 +132,8 @@ public class TaskDrawDiamond extends AbstractTaskDraw {
 
 	@Override
 	protected TextBlock getTitle() {
-		return Display.getWithNewlines(prettyDisplay).create(getFontConfiguration(), HorizontalAlignment.LEFT,
-				new SpriteContainerEmpty());
+		return Display.getWithNewlines(getStyleBuilder().getSkinParam().getPragma(), prettyDisplay)
+				.create(getFontConfiguration(), HorizontalAlignment.LEFT, new SpriteContainerEmpty());
 	}
 
 	@Override
@@ -154,8 +159,8 @@ public class TaskDrawDiamond extends AbstractTaskDraw {
 			ug = ug.apply(UTranslate.dx(delta / 2));
 			drawShape(applyColors(ug));
 		} else {
-			final TextBlock draw = Display.getWithNewlines(displayString).create(getFontConfiguration(),
-					HorizontalAlignment.LEFT, new SpriteContainerEmpty());
+			final TextBlock draw = Display.getWithNewlines(getStyleBuilder().getSkinParam().getPragma(), displayString)
+					.create(getFontConfiguration(), HorizontalAlignment.LEFT, new SpriteContainerEmpty());
 			draw.drawU(ug);
 		}
 		if (url != null)
@@ -198,21 +203,40 @@ public class TaskDrawDiamond extends AbstractTaskDraw {
 	}
 
 	@Override
-	public double getX1(TaskAttribute taskAttribute) {
-		final double x1 = timeScale.getStartingPosition(start);
-		final double x2 = timeScale.getEndingPosition(start);
-		final double width = getDiamondHeight();
-		final double delta = x2 - x1 - width;
-		return x1 + delta;
+	public double getX(StringBounder stringBounder, GSide side, GArrowType arrowType) {
+		double x;
+		if (side == GSide.LEFT)
+			x = timeScale.getStartingPosition(start);
+		else if (side == GSide.RIGHT)
+			x = timeScale.getEndingPosition(start);
+		else
+			x = (timeScale.getStartingPosition(start) + timeScale.getEndingPosition(start)) / 2;
+
+		if (arrowType == GArrowType.OUTGOING) {
+			final double width = getDiamondHeight();
+			if (side == GSide.LEFT)
+				x += width / 2;
+			else if (side == GSide.RIGHT)
+				x -= width / 2;
+		}
+		return x;
 	}
 
 	@Override
-	public double getX2(TaskAttribute taskAttribute) {
-		final double x1 = timeScale.getStartingPosition(start);
-		final double x2 = timeScale.getEndingPosition(start);
-		final double width = getDiamondHeight();
-		final double delta = x2 - x1 - width;
-		return x2 - delta;
+	public double getY(StringBounder stringBounder, GSide side) {
+		final Style style = getStyle();
+		final ClockwiseTopRightBottomLeft margin = style.getMargin();
+
+		final double y1 = margin.getTop() + getY(stringBounder).getCurrentValue();
+		final double y2 = y1 + getShapeHeight(stringBounder);
+
+		final String displayString = getTask().getDisplayString();
+
+		if (displayString == null)
+			return y1 + getDiamondHeight() / 2;
+
+		return (y1 + y2) / 2;
+
 	}
 
 }

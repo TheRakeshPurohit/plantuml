@@ -48,8 +48,10 @@ import net.sourceforge.plantuml.klimt.shape.TextBlockUtils;
 import net.sourceforge.plantuml.klimt.shape.UDrawable;
 import net.sourceforge.plantuml.klimt.shape.ULine;
 import net.sourceforge.plantuml.skin.ArrowConfiguration;
+import net.sourceforge.plantuml.stereo.Stereotype;
 import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.SName;
+import net.sourceforge.plantuml.style.StyleSignature;
 import net.sourceforge.plantuml.style.StyleSignatureBasic;
 import net.sourceforge.plantuml.timingdiagram.graphic.IntricatedPoint;
 import net.sourceforge.plantuml.timingdiagram.graphic.PlayerFrame;
@@ -64,8 +66,8 @@ public class PlayerClock extends Player {
 	private final boolean displayTitle;
 
 	public PlayerClock(String title, ISkinParam skinParam, TimingRuler ruler, int period, int pulse, int offset,
-			boolean compact) {
-		super(title, skinParam, ruler, compact, null);
+			boolean compact, Stereotype stereotype) {
+		super(title, skinParam, ruler, compact, stereotype, null);
 		this.displayTitle = title.length() > 0;
 		this.period = period;
 		this.pulse = pulse;
@@ -89,8 +91,9 @@ public class PlayerClock extends Player {
 	}
 
 	@Override
-	protected StyleSignatureBasic getStyleSignature() {
-		return StyleSignatureBasic.of(SName.root, SName.element, SName.timingDiagram, SName.clock);
+	protected StyleSignature getStyleSignature() {
+		return StyleSignatureBasic.of(SName.root, SName.element, SName.timingDiagram, SName.clock)
+				.withTOBECHANGED(stereotype);
 	}
 
 	@Override
@@ -99,7 +102,7 @@ public class PlayerClock extends Player {
 	}
 
 	@Override
-	public void addNote(TimeTick now, Display note, Position position) {
+	public void addNote(TimeTick now, Display note, Position position, Stereotype stereotype) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -128,7 +131,11 @@ public class PlayerClock extends Player {
 			return new AbstractTextBlock() {
 
 				public void drawU(UGraphic ug) {
-					new PlayerFrame(getTitle(), skinParam).drawFrameTitle(ug);
+					if (isCompact()) {
+						new PlayerFrame(getTitle(), skinParam).drawTitle(ug);
+					} else {
+						new PlayerFrame(getTitle(), skinParam).drawFrameTitle(ug);
+					}
 				}
 
 				public XDimension2D calculateDimension(StringBounder stringBounder) {

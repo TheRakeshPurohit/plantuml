@@ -35,17 +35,21 @@
  */
 package net.sourceforge.plantuml;
 
-import static net.atmp.ImageBuilder.imageBuilder;
+
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Objects;
+import java.util.Set;
 
 import net.atmp.ImageBuilder;
 import net.sourceforge.plantuml.abel.DisplayPositioned;
 import net.sourceforge.plantuml.abel.DisplayPositionned;
 import net.sourceforge.plantuml.command.Command;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.ProtectedCommand;
 import net.sourceforge.plantuml.core.Diagram;
 import net.sourceforge.plantuml.core.ImageData;
@@ -60,12 +64,15 @@ import net.sourceforge.plantuml.klimt.font.UFont;
 import net.sourceforge.plantuml.klimt.geom.HorizontalAlignment;
 import net.sourceforge.plantuml.klimt.geom.VerticalAlignment;
 import net.sourceforge.plantuml.klimt.shape.UText;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
 import net.sourceforge.plantuml.stats.StatsUtilsIncrement;
 import net.sourceforge.plantuml.style.ClockwiseTopRightBottomLeft;
 import net.sourceforge.plantuml.text.BackSlash;
 import net.sourceforge.plantuml.utils.BlocLines;
 import net.sourceforge.plantuml.version.License;
 import net.sourceforge.plantuml.version.Version;
+import net.sourceforge.plantuml.warning.Warning;
+import net.sourceforge.plantuml.warning.WarningHandler;
 
 /**
  * An abstract class for all diagram classes.
@@ -76,7 +83,7 @@ import net.sourceforge.plantuml.version.Version;
  *
  * @see PSystemBuilder
  */
-public abstract class AbstractPSystem implements Diagram {
+public abstract class AbstractPSystem implements Diagram, WarningHandler {
 	// ::remove file when __HAXE__
 
 	private final UmlSource source;
@@ -85,6 +92,7 @@ public abstract class AbstractPSystem implements Diagram {
 	private int splitPagesVertical = 1;
 
 	private String namespaceSeparator = null;
+	private final PreprocessingArtifact preprocessing;
 
 	public void setNamespaceSeparator(String namespaceSeparator) {
 		this.namespaceSeparator = namespaceSeparator;
@@ -94,8 +102,9 @@ public abstract class AbstractPSystem implements Diagram {
 		return namespaceSeparator;
 	}
 
-	public AbstractPSystem(UmlSource source) {
+	public AbstractPSystem(UmlSource source, PreprocessingArtifact preprocessing) {
 		this.source = Objects.requireNonNull(source);
+		this.preprocessing = preprocessing;
 	}
 
 	private String getVersion() {
@@ -180,10 +189,10 @@ public abstract class AbstractPSystem implements Diagram {
 		return true;
 	}
 
-	public CommandExecutionResult executeCommand(Command cmd, BlocLines lines) {
+	public CommandExecutionResult executeCommand(Command cmd, BlocLines lines, ParserPass currentPass) {
 		cmd = new ProtectedCommand(cmd);
 		try {
-			return cmd.execute(this, lines);
+			return cmd.execute(this, lines, currentPass);
 		} catch (NoSuchColorException e) {
 			return CommandExecutionResult.badColor();
 		}
@@ -226,7 +235,7 @@ public abstract class AbstractPSystem implements Diagram {
 	public ImageBuilder createImageBuilder(FileFormatOption fileFormatOption) throws IOException {
 		final ColorMapper init = fileFormatOption.getColorMapper();
 		final ColorMapper newColorMappter = muteColorMapper(init);
-		return imageBuilder(fileFormatOption.withColorMapper(newColorMappter));
+		return ImageBuilder.create(fileFormatOption.withColorMapper(newColorMappter));
 	}
 
 	protected ColorMapper muteColorMapper(ColorMapper init) {
@@ -243,7 +252,7 @@ public abstract class AbstractPSystem implements Diagram {
 
 	@Override
 	public Display getTitleDisplay() {
-		return null;
+		return Display.NULL;
 	}
 
 	@Override
@@ -252,6 +261,28 @@ public abstract class AbstractPSystem implements Diagram {
 		final FontConfiguration fc = FontConfiguration.blackBlueTrue(font);
 		final UText text = UText.build("Not implemented yet for " + getClass().getName(), fc);
 		ug.apply(new UTranslate(10, 10)).draw(text);
+	}
+
+	public Set<ParserPass> getRequiredPass() {
+		return EnumSet.of(ParserPass.ONE);
+	}
+
+	public void startingPass(ParserPass pass) {
+	}
+
+	final public PreprocessingArtifact getPreprocessingArtifact() {
+		return preprocessing;
+	}
+
+	@Override
+	public void addWarning(Warning warning) {
+		throw new UnsupportedOperationException();
+
+	}
+
+	@Override
+	public Collection<Warning> getWarnings() {
+		return preprocessing.getWarnings();
 	}
 
 }

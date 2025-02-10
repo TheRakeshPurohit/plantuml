@@ -36,8 +36,8 @@
 package net.sourceforge.plantuml.classdiagram;
 
 import java.util.List;
-import java.util.Map;
 
+import net.sourceforge.plantuml.Previous;
 import net.sourceforge.plantuml.classdiagram.command.CommandAddMethod;
 import net.sourceforge.plantuml.classdiagram.command.CommandAllowMixing;
 import net.sourceforge.plantuml.classdiagram.command.CommandCreateClass;
@@ -49,7 +49,6 @@ import net.sourceforge.plantuml.classdiagram.command.CommandHideShow2;
 import net.sourceforge.plantuml.classdiagram.command.CommandLayoutNewLine;
 import net.sourceforge.plantuml.classdiagram.command.CommandLinkClass;
 import net.sourceforge.plantuml.classdiagram.command.CommandLinkLollipop;
-import net.sourceforge.plantuml.classdiagram.command.CommandNamespaceSeparator;
 import net.sourceforge.plantuml.classdiagram.command.CommandRemoveRestore;
 import net.sourceforge.plantuml.classdiagram.command.CommandStereotype;
 import net.sourceforge.plantuml.classdiagram.command.CommandUrl;
@@ -63,7 +62,9 @@ import net.sourceforge.plantuml.command.CommandPackage;
 import net.sourceforge.plantuml.command.CommandPackageEmpty;
 import net.sourceforge.plantuml.command.CommandRankDir;
 import net.sourceforge.plantuml.command.CommonCommands;
+import net.sourceforge.plantuml.command.NameAndCodeParser;
 import net.sourceforge.plantuml.command.PSystemCommandFactory;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.note.CommandConstraintOnLinks;
 import net.sourceforge.plantuml.command.note.CommandFactoryNote;
 import net.sourceforge.plantuml.command.note.CommandFactoryNoteOnEntity;
@@ -80,14 +81,14 @@ import net.sourceforge.plantuml.objectdiagram.command.CommandCreateEntityObjectM
 import net.sourceforge.plantuml.objectdiagram.command.CommandCreateJson;
 import net.sourceforge.plantuml.objectdiagram.command.CommandCreateJsonSingleLine;
 import net.sourceforge.plantuml.objectdiagram.command.CommandCreateMap;
-import net.sourceforge.plantuml.regex.RegexLeaf;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
 
 public class ClassDiagramFactory extends PSystemCommandFactory {
 
 	@Override
-	public ClassDiagram createEmptyDiagram(UmlSource source, Map<String, String> skinParam) {
-		return new ClassDiagram(source, skinParam);
+	public ClassDiagram createEmptyDiagram(UmlSource source, Previous previous, PreprocessingArtifact preprocessing) {
+		return new ClassDiagram(source, previous, preprocessing);
 	}
 
 	@Override
@@ -134,13 +135,12 @@ public class ClassDiagramFactory extends PSystemCommandFactory {
 		cmds.add(new CommandLinkClass(UmlDiagramType.CLASS));
 		cmds.add(new CommandLinkLollipop(UmlDiagramType.CLASS));
 
-		final CommandFactoryTipOnEntity factoryTipOnEntityCommand = new CommandFactoryTipOnEntity("a", new RegexLeaf(
-				"ENTITY", "(" + CommandCreateClass.CODE_NO_DOTDOT + "|[%g][^%g]+[%g])::([%g][^%g]+[%g]|[^%s]+)"));
+		final CommandFactoryTipOnEntity factoryTipOnEntityCommand = new CommandFactoryTipOnEntity();
 		cmds.add(factoryTipOnEntityCommand.createMultiLine(true));
 		cmds.add(factoryTipOnEntityCommand.createMultiLine(false));
 
 		final CommandFactoryNoteOnEntity factoryNoteOnEntityCommand = new CommandFactoryNoteOnEntity("class",
-				new RegexLeaf("ENTITY", "(" + CommandCreateClass.CODE + "|[%g][^%g]+[%g])"));
+				NameAndCodeParser.codeForClass(), ParserPass.ONE);
 		cmds.add(factoryNoteOnEntityCommand.createSingleLine());
 		cmds.add(new CommandUrl());
 
@@ -148,7 +148,7 @@ public class ClassDiagramFactory extends PSystemCommandFactory {
 		cmds.add(factoryNoteOnEntityCommand.createMultiLine(false));
 		cmds.add(factoryNoteCommand.createMultiLine(false));
 
-		final CommandFactoryNoteOnLink factoryNoteOnLinkCommand = new CommandFactoryNoteOnLink();
+		final CommandFactoryNoteOnLink factoryNoteOnLinkCommand = new CommandFactoryNoteOnLink(ParserPass.ONE);
 		cmds.add(factoryNoteOnLinkCommand.createSingleLine());
 		cmds.add(factoryNoteOnLinkCommand.createMultiLine(false));
 		cmds.add(new CommandConstraintOnLinks());
@@ -160,4 +160,10 @@ public class ClassDiagramFactory extends PSystemCommandFactory {
 		CommonCommands.addTitleCommands(cmds);
 		CommonCommands.addCommonCommands2(cmds);
 	}
+	
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return UmlDiagramType.CLASS;
+	}
+
 }

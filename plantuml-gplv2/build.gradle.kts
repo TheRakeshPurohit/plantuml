@@ -10,6 +10,8 @@ plugins {
 	java
 	`maven-publish`
 	signing
+	alias(libs.plugins.graalvm.native)
+	application
 }
 
 group = "net.sourceforge.plantuml"
@@ -24,11 +26,11 @@ java {
 }
 
 dependencies {
-	compileOnly("org.apache.ant:ant:1.10.14")
-	testImplementation("org.assertj:assertj-core:3.25.3")
-	testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-	testImplementation("org.scilab.forge:jlatexmath:1.0.7")
-	testImplementation("org.xmlunit:xmlunit-core:2.9.+")
+	compileOnly(libs.ant)
+	testImplementation(libs.assertj.core)
+	testImplementation(libs.junit.jupiter)
+	testImplementation(libs.jlatexmath)
+	testImplementation(libs.xmlunit.core)
 }
 
 repositories {
@@ -70,6 +72,7 @@ tasks.withType<Jar>().configureEach {
 	from("../stdlib") { into("stdlib") }
 	from("../svg") { into("svg") }
 	from("../themes") { into("themes") }
+	from("../resources") { into("resources") }
 	// source sets for java and resources are on "src", only put once into the jar
 	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
@@ -181,4 +184,27 @@ signing {
 	if (hasProperty("signing.gnupg.passphrase") || hasProperty("signingPassword")) {
 		sign(publishing.publications["maven"])
 	}
+}
+
+application {
+	mainClass = "net.sourceforge.plantuml.Run"
+}
+
+graalvmNative {
+  binaries.all { resources.autodetect() }
+	binaries.create("full") {
+		buildArgs(listOf("-Djava.awt.headless=false"))
+		runtimeArgs(listOf("-Djava.awt.headless=false"))
+		imageName.set("plantuml-full")
+		mainClass.set(application.mainClass)
+		classpath(binaries.named("main").get().classpath)
+	}
+	binaries.create("headless") {
+		imageName.set("plantuml-headless")
+		mainClass.set(application.mainClass)
+		classpath(binaries.named("main").get().classpath)
+		runtimeArgs(listOf("-Djava.awt.headless=true"))
+		buildArgs(listOf("-Djava.awt.headless=true"))
+	}
+  toolchainDetection = false
 }

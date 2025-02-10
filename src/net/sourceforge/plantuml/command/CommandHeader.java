@@ -73,14 +73,14 @@ public class CommandHeader extends SingleLineCommand2<TitledDiagram> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(TitledDiagram diagram, LineLocation location, RegexResult arg) {
+	protected CommandExecutionResult executeArg(TitledDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass) {
 		final String align = arg.get("POSITION", 0);
 		HorizontalAlignment ha = HorizontalAlignment.fromString(align, HorizontalAlignment.RIGHT);
 		if (align == null)
 			ha = FontParam.HEADER.getStyleDefinition(null).getMergedStyle(diagram.getCurrentStyleBuilder())
 					.getHorizontalAlignment();
 
-		final Display s = Display.getWithNewlines(arg.getLazzy("LABEL", 0));
+		final Display s = Display.getWithNewlines(diagram.getPragma(), arg.getLazzy("LABEL", 0));
 		diagram.getHeader().putDisplay(s, ha);
 		return CommandExecutionResult.ok();
 	}

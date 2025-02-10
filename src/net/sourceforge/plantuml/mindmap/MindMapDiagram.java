@@ -5,12 +5,12 @@
  * (C) Copyright 2009-2024, Arnaud Roques
  *
  * Project Info:  https://plantuml.com
- * 
+ *
  * If you like this project or if you find it useful, you can support us at:
- * 
+ *
  * https://plantuml.com/patreon (only 1$ per month!)
  * https://plantuml.com/paypal
- * 
+ *
  * This file is part of PlantUML.
  *
  * PlantUML is free software; you can redistribute it and/or modify it
@@ -55,8 +55,10 @@ import net.sourceforge.plantuml.klimt.geom.Rankdir;
 import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 import net.sourceforge.plantuml.klimt.shape.AbstractTextBlock;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
 import net.sourceforge.plantuml.skin.SkinParam;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
+import net.sourceforge.plantuml.stereo.Stereotype;
 import net.sourceforge.plantuml.utils.Direction;
 
 public class MindMapDiagram extends UmlDiagram {
@@ -73,8 +75,8 @@ public class MindMapDiagram extends UmlDiagram {
 		return new DiagramDescription("MindMap");
 	}
 
-	public MindMapDiagram(UmlSource source) {
-		super(source, UmlDiagramType.MINDMAP, null);
+	public MindMapDiagram(UmlSource source, PreprocessingArtifact preprocessing) {
+		super(source, UmlDiagramType.MINDMAP, null, preprocessing);
 		((SkinParam) getSkinParam()).setRankdir(Rankdir.LEFT_TO_RIGHT);
 		this.mindmaps.add(new MindMap(getSkinParam()));
 	}
@@ -122,7 +124,7 @@ public class MindMapDiagram extends UmlDiagram {
 
 	public CommandExecutionResult addIdea(HColor backColor, int level, Display label, IdeaShape shape,
 			boolean direction) {
-		String stereotype = label.getEndingStereotype();
+		final Stereotype stereotype = label.getEndingStereotype();
 		if (stereotype != null)
 			label = label.removeEndingStereotype();
 
@@ -132,7 +134,7 @@ public class MindMapDiagram extends UmlDiagram {
 		return last().addIdeaInternal(stereotype, backColor, level, label, shape, direction);
 	}
 
-	public CommandExecutionResult addIdea(String stereotype, HColor backColor, int level, Display label,
+	public CommandExecutionResult addIdea(Stereotype stereotype, HColor backColor, int level, Display label,
 			IdeaShape shape) {
 		if (last().isFull(level))
 			this.mindmaps.add(new MindMap(getSkinParam()));

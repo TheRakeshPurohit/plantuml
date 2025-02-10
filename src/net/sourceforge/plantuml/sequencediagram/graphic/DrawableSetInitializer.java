@@ -150,7 +150,7 @@ class DrawableSetInitializer {
 			final LivingParticipantBox living = drawableSet.getLivingParticipantBox(p);
 			for (int i = 0; i < p.getInitialLife(); i++)
 				living.getLifeLine().addSegmentVariation(LifeSegmentVariation.LARGER,
-						freeY2.getFreeY(getFullParticipantRange()), p.getLiveSpecificBackColors());
+						freeY2.getFreeY(getFullParticipantRange()), p.getLiveSpecificBackColors(i));
 
 		}
 
@@ -643,15 +643,15 @@ class DrawableSetInitializer {
 		final Component delayLine = drawableSet.getSkin().createComponent(null, ComponentType.DELAY_LINE, null,
 				drawableSet.getSkinParam(), participantDisplay);
 		final ParticipantBox box = new ParticipantBox(head, line, tail, delayLine, this.freeX,
-				skinParam.maxAsciiMessageLength() > 0 ? 1 : 5);
+				skinParam.maxAsciiMessageLength() > 0 ? 1 : 5, p.getCode());
 
 		final Component comp = drawableSet.getSkin().createComponent(
 				new Style[] { ComponentType.ALIVE_BOX_CLOSE_CLOSE.getStyleSignature()
 						.getMergedStyle(drawableSet.getSkinParam().getCurrentStyleBuilder()) },
-				ComponentType.ALIVE_BOX_CLOSE_CLOSE, null, drawableSet.getSkinParam(), null);
+				ComponentType.ALIVE_BOX_CLOSE_CLOSE, null, drawableSet.getSkinParam(), participantDisplay);
 
 		final LifeLine lifeLine = new LifeLine(box, comp.getPreferredWidth(stringBounder),
-				drawableSet.getSkinParam().shadowing(p.getStereotype()));
+				drawableSet.getSkinParam().shadowing(p.getStereotype()), participantDisplay);
 		drawableSet.setLivingParticipantBox(p, new LivingParticipantBox(box, lifeLine));
 
 		this.freeX = box.getMaxX(stringBounder);

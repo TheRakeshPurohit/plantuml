@@ -36,6 +36,7 @@
 package net.sourceforge.plantuml.ebnf;
 
 import net.sourceforge.plantuml.activitydiagram3.ftile.vcompact.FloatingNote;
+import net.sourceforge.plantuml.annotation.DuplicateCode;
 import net.sourceforge.plantuml.klimt.UTranslate;
 import net.sourceforge.plantuml.klimt.color.HColors;
 import net.sourceforge.plantuml.klimt.creole.Display;
@@ -107,7 +108,7 @@ public class ETileOptional extends ETile {
 		drawVline(ug, posA, corner + posYoptionalLine, linePos - corner);
 		CornerCurved.createNW(corner).drawU(ug.apply(new UTranslate(posA, posYoptionalLine)));
 
-		drawHlineDirected(ug, posYoptionalLine, posA + corner, posB - corner, 0.4);
+		drawHlineDirected(ug, posYoptionalLine, posA + corner, posB - corner, 0.4, 0);
 
 		CornerCurved.createSW(corner).drawU(ug.apply(new UTranslate(posB, linePos)));
 		drawVline(ug, posB, corner + posYoptionalLine, linePos - corner);
@@ -148,17 +149,18 @@ public class ETileOptional extends ETile {
 		this.commentBelow = comment;
 	}
 
+	@DuplicateCode(reference = "ETileZeroOrMore")
 	private TextBlock getNoteAbove(StringBounder stringBounder) {
 		if (commentAbove == null)
 			return TextBlockUtils.EMPTY_TEXT_BLOCK;
-		final FloatingNote note = FloatingNote.create(Display.getWithNewlines(commentAbove), skinParam, SName.ebnf);
+		final FloatingNote note = FloatingNote.create(Display.getWithNewlines(skinParam.getPragma(), commentAbove), skinParam, SName.ebnf);
 		return TextBlockUtils.withMargin(note, 0, 0, 0, 10);
 	}
 
 	private TextBlock getNoteBelow(StringBounder stringBounder) {
 		if (commentBelow == null)
 			return TextBlockUtils.EMPTY_TEXT_BLOCK;
-		final FloatingNote note = FloatingNote.create(Display.getWithNewlines(commentBelow), skinParam, SName.ebnf);
+		final FloatingNote note = FloatingNote.create(Display.getWithNewlines(skinParam.getPragma(), commentBelow), skinParam, SName.ebnf);
 		return TextBlockUtils.withMargin(note, 0, 0, 10, 0);
 	}
 

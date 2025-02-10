@@ -43,6 +43,7 @@ import net.sourceforge.plantuml.project.Load;
 import net.sourceforge.plantuml.project.lang.CenterBorderColor;
 import net.sourceforge.plantuml.project.time.Day;
 import net.sourceforge.plantuml.project.time.DayOfWeek;
+import net.sourceforge.plantuml.stereo.Stereotype;
 import net.sourceforge.plantuml.style.StyleBuilder;
 import net.sourceforge.plantuml.url.Url;
 
@@ -51,8 +52,8 @@ public class TaskGroup extends AbstractTask implements Task {
 	private final TaskGroup parent;
 	private final List<Task> children = new ArrayList<>();
 
-	public TaskGroup(TaskGroup parent, StyleBuilder styleBuilder, String name) {
-		super(styleBuilder, new TaskCode(name));
+	public TaskGroup(TaskGroup parent, StyleBuilder styleBuilder, TaskCode code) {
+		super(styleBuilder, code);
 		this.parent = parent;
 	}
 
@@ -143,7 +144,7 @@ public class TaskGroup extends AbstractTask implements Task {
 	}
 
 	@Override
-	public void setNote(Display note) {
+	public void setNote(Display note, Stereotype stereotype) {
 	}
 
 	public void addTask(Task child) {

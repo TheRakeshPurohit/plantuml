@@ -36,6 +36,7 @@
 package net.sourceforge.plantuml.cucadiagram;
 
 import net.sourceforge.plantuml.abel.Entity;
+import net.sourceforge.plantuml.plasma.Plasma;
 import net.sourceforge.plantuml.stereo.Stereotag;
 import net.sourceforge.plantuml.stereo.Stereotype;
 
@@ -50,6 +51,9 @@ public class HideOrShow {
 	}
 
 	private boolean isApplyable(Entity leaf) {
+		if (leaf.isRoot())
+			throw new IllegalArgumentException();
+
 		if (what.startsWith("$"))
 			return isApplyableTag(leaf, what.substring(1));
 
@@ -100,16 +104,21 @@ public class HideOrShow {
 		return false;
 	}
 
-	private boolean match(String s, String pattern) {
+	private boolean match(String name, String pattern) {
+
+		final int idx = name.lastIndexOf(Plasma.MAGIC_SEPARATOR);
+		if (idx != -1)
+			name = name.substring(idx + 1);
+
 		if (pattern.contains("*")) {
 			// System.err.println("f1=" + pattern);
 			// System.err.println("f2=" + Pattern.quote(pattern));
 			// System.err.println("f3=" + Matcher.quoteReplacement(pattern));
-			String reg = "^" + pattern.replace("*", ".*") + "$";
-			return s.matches(reg);
-
+			final String reg = "^" + pattern.replace("*", ".*") + "$";
+			return name.matches(reg);
 		}
-		return s.equals(pattern);
+
+		return name.equals(pattern);
 	}
 
 	public HideOrShow(String what, boolean show) {

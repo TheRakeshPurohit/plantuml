@@ -5,12 +5,12 @@
  * (C) Copyright 2009-2024, Arnaud Roques
  *
  * Project Info:  https://plantuml.com
- * 
+ *
  * If you like this project or if you find it useful, you can support us at:
- * 
+ *
  * https://plantuml.com/patreon (only 1$ per month!)
  * https://plantuml.com/paypal
- * 
+ *
  * This file is part of PlantUML.
  *
  * PlantUML is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  *
  *
  * Original Author:  Arnaud Roques
- * 
+ *
  *
  */
 package net.sourceforge.plantuml.svek;
@@ -40,11 +40,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import net.atmp.CucaDiagram;
 import net.sourceforge.plantuml.abel.Entity;
 import net.sourceforge.plantuml.abel.GroupType;
 import net.sourceforge.plantuml.abel.Link;
 import net.sourceforge.plantuml.cucadiagram.GroupHierarchy;
-import net.sourceforge.plantuml.cucadiagram.ICucaDiagram;
+import net.sourceforge.plantuml.cucadiagram.PortionShower;
 import net.sourceforge.plantuml.dot.DotData;
 import net.sourceforge.plantuml.klimt.color.ColorType;
 import net.sourceforge.plantuml.klimt.color.HColor;
@@ -53,7 +54,6 @@ import net.sourceforge.plantuml.skin.ColorParam;
 import net.sourceforge.plantuml.skin.rose.Rose;
 import net.sourceforge.plantuml.stereo.Stereotype;
 import net.sourceforge.plantuml.style.ISkinParam;
-import net.sourceforge.plantuml.style.PName;
 import net.sourceforge.plantuml.style.SName;
 import net.sourceforge.plantuml.style.Style;
 import net.sourceforge.plantuml.style.StyleSignatureBasic;
@@ -61,9 +61,10 @@ import net.sourceforge.plantuml.svek.image.EntityImageState;
 
 public final class GroupMakerActivity {
 
-	private final ICucaDiagram diagram;
+	private final CucaDiagram diagram;
 	private final Entity group;
 	private final StringBounder stringBounder;
+	private final DotMode dotMode;
 
 	class InnerGroupHierarchy implements GroupHierarchy {
 
@@ -84,10 +85,11 @@ public final class GroupMakerActivity {
 
 	}
 
-	public GroupMakerActivity(ICucaDiagram diagram, Entity group, StringBounder stringBounder) {
+	public GroupMakerActivity(CucaDiagram diagram, Entity group, StringBounder stringBounder, DotMode dotMode) {
 		this.diagram = diagram;
 		this.group = group;
 		this.stringBounder = stringBounder;
+		this.dotMode = dotMode;
 	}
 
 	private List<Link> getPureInnerLinks() {
@@ -109,17 +111,22 @@ public final class GroupMakerActivity {
 
 	public IEntityImage getImage() throws IOException, InterruptedException {
 		if (group.countChildren() == 0)
-			return new EntityImageState(group, diagram.getSkinParam());
+			return new EntityImageState(group);
 
 		final List<Link> links = getPureInnerLinks();
 		final ISkinParam skinParam = diagram.getSkinParam();
+		final Bibliotekon bibliotekon = new Bibliotekon(links);
 
-		final DotData dotData = new DotData(group, links, group.leafs(), diagram.getUmlDiagramType(), skinParam,
-				new InnerGroupHierarchy(), diagram.getEntityFactory(), false, DotMode.NORMAL,
-				diagram.getNamespaceSeparator(), diagram.getPragma());
+		final DotData dotData = new DotData(diagram, group, links, group.leafs(), new InnerGroupHierarchy(),
+				PortionShower.ALL);
 
-		final GeneralImageBuilder svek2 = new GeneralImageBuilder(dotData, diagram.getEntityFactory(),
-				diagram.getSource(), diagram.getPragma(), stringBounder, SName.activityDiagram);
+		final Cluster root = new Cluster(diagram, bibliotekon.getColorSequence(), dotData.getRootGroup());
+
+		final ClusterManager clusterManager = new ClusterManager(bibliotekon, root);
+		final DotStringFactory dotStringFactory = new DotStringFactory(bibliotekon, root, diagram.getUmlDiagramType(),
+				diagram.getSkinParam());
+		final GraphvizImageBuilder svek2 = new GraphvizImageBuilder(dotData, diagram.getSource(), diagram.getPragma(),
+				SName.activityDiagram, dotMode, dotStringFactory, clusterManager);
 
 		if (group.getGroupType() == GroupType.INNER_ACTIVITY) {
 			final Stereotype stereo = group.getStereotype();
@@ -129,9 +136,10 @@ public final class GroupMakerActivity {
 					: group.getColors().getColor(ColorType.BACK);
 
 			final Style style = getDefaultStyleDefinitionGroup().getMergedStyle(skinParam.getCurrentStyleBuilder());
-			final double shadowing = style.value(PName.Shadowing).asDouble();
+			final double shadowing = style.getShadowing();
 
-			return new InnerActivity(svek2.buildImage(null, new String[0], false), borderColor, backColor, shadowing);
+			return new InnerActivity(svek2.buildImage(stringBounder, null, new String[0], false), borderColor,
+					backColor, shadowing);
 		}
 
 		throw new UnsupportedOperationException(group.getGroupType().toString());

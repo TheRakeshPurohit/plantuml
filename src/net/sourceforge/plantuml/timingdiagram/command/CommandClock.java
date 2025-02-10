@@ -36,12 +36,15 @@
 package net.sourceforge.plantuml.timingdiagram.command;
 
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.regex.IRegex;
 import net.sourceforge.plantuml.regex.RegexConcat;
 import net.sourceforge.plantuml.regex.RegexLeaf;
 import net.sourceforge.plantuml.regex.RegexOptional;
 import net.sourceforge.plantuml.regex.RegexResult;
+import net.sourceforge.plantuml.stereo.Stereotype;
+import net.sourceforge.plantuml.stereo.StereotypePattern;
 import net.sourceforge.plantuml.timingdiagram.TimingDiagram;
 import net.sourceforge.plantuml.utils.LineLocation;
 
@@ -83,11 +86,14 @@ public class CommandClock extends SingleLineCommand2<TimingDiagram> {
 						RegexLeaf.spaceOneOrMore(), //
 						new RegexLeaf("OFFSET", "([0-9]+)") //
 				)), //
+				RegexLeaf.spaceZeroOrMore(), //
+				StereotypePattern.optional("STEREO"), //
+				RegexLeaf.spaceZeroOrMore(), //
 				RegexLeaf.end());
 	}
 
 	@Override
-	final protected CommandExecutionResult executeArg(TimingDiagram diagram, LineLocation location, RegexResult arg) {
+	final protected CommandExecutionResult executeArg(TimingDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass) {
 		final String compact = arg.get("COMPACT", 0);
 		final String code = arg.get("CODE", 0);
 		final int period = Integer.parseInt(arg.get("PERIOD", 0));
@@ -96,7 +102,11 @@ public class CommandClock extends SingleLineCommand2<TimingDiagram> {
 		String full = arg.get("FULL", 0);
 		if (full == null)
 			full = "";
-		return diagram.createClock(code, full, period, pulse, offset, compact != null);
+		final String stereotypeString = arg.get("STEREO", 0);
+		Stereotype stereotype = null;
+		if (stereotypeString != null)
+			stereotype = Stereotype.build(stereotypeString);
+		return diagram.createClock(code, full, period, pulse, offset, compact != null, stereotype);
 	}
 
 	private int getInt(String value) {

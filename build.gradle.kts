@@ -13,7 +13,8 @@ plugins {
 	java
 	`maven-publish`
 	signing
-//	id("com.adarshr.test-logger") version "3.2.0"
+    eclipse
+//	alias(libs.plugins.adarshr.test.logger)
 }
 
 group = "net.sourceforge.plantuml"
@@ -28,23 +29,29 @@ java {
 }
 
 dependencies {
-	compileOnly("org.apache.ant:ant:1.10.14")
+	compileOnly(libs.ant)
 
-	testImplementation("io.github.glytching:junit-extensions:2.6.0")
-	testImplementation("org.assertj:assertj-core:3.25.3")
-	testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-	testImplementation("org.xmlunit:xmlunit-core:2.9.+")
+	testImplementation(libs.glytching.junit.extensions)
+	testImplementation(libs.assertj.core)
+	testImplementation(libs.junit.jupiter)
+	testImplementation(libs.xmlunit.core)
 	if (JavaVersion.current().isJava8) {
-		testImplementation("org.mockito:mockito-core:4.+")
-		testImplementation("org.mockito:mockito-junit-jupiter:4.+")
+		testImplementation(libs.mockito.core.j8)
+		testImplementation(libs.mockito.junit.jupiter.j8)
 	} else {
-		testImplementation("org.mockito:mockito-core:5.+")
-		testImplementation("org.mockito:mockito-junit-jupiter:5.+")
+		testImplementation(libs.mockito.core)
+		testImplementation(libs.mockito.junit.jupiter)
 	}
-	testImplementation("org.scilab.forge:jlatexmath:1.0.7")
+	implementation(libs.jlatexmath)
+    implementation(libs.elk.core)
+    implementation(libs.elk.alg.layered)
+    implementation(libs.elk.alg.mrtree)
 
-	"pdfRuntimeOnly"("org.apache.xmlgraphics:fop:2.9")
-	"pdfRuntimeOnly"("org.apache.xmlgraphics:batik-all:1.17")
+    // Custom configuration for pdfJar task
+    configurations.create("pdfJarDeps")
+    "pdfJarDeps"(libs.fop)
+    "pdfJarDeps"(libs.batik.all)
+
 }
 
 repositories {
@@ -58,11 +65,12 @@ sourceSets {
 			srcDirs("src")
 		}
 		resources {
-			srcDirs("src")
+			srcDirs("src","resources")
 			include("**/graphviz.dat")
 			include("**/*.png")
 			include("**/*.svg")
 			include("**/*.txt")
+			include("resources/**/*.properties")
 		}
 	}
 	test {
@@ -70,9 +78,12 @@ sourceSets {
 			srcDirs("test")
 		}
 		resources {
-			srcDirs(".")
+			srcDirs(".", "resources")
+			include("svg/**/*.css")
+			include("svg/**/*.js")
 			include("skin/**/*.skin")
 			include("themes/**/*.puml")
+			include("resources/**/*.properties")
 		}
 	}
 }
@@ -86,18 +97,31 @@ tasks.compileJava {
 }
 
 tasks.withType<Jar>().configureEach {
-	manifest {
-		attributes["Main-Class"] = "net.sourceforge.plantuml.Run"
-		attributes["Implementation-Version"] = archiveVersion
-		attributes["Build-Jdk-Spec"] = System.getProperty("java.specification.version")
-		from("manifest.txt")
+    manifest {
+        attributes["Main-Class"] = "net.sourceforge.plantuml.Run"
+        attributes["Implementation-Version"] = archiveVersion
+        attributes["Build-Jdk-Spec"] = System.getProperty("java.specification.version")
+        from("manifest.txt")
+    }
+    from("skin") { into("skin") }
+    from("stdlib") { into("stdlib") }
+    from("svg") { into("svg") }
+    from("themes") { into("themes") }
+		from("resources") { into("resources") }
+
+    // Add dependencies to the JAR
+    val runtimeClasspath = configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }
+    from(runtimeClasspath) {
+        exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA") // Avoid conflict on signature
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.named<Copy>("processResources") {
+	from("resources") {
+		include("**/*")
 	}
-	from("skin") { into("skin") }
-	from("stdlib") { into("stdlib") }
-	from("svg") { into("svg") }
-	from("themes") { into("themes") }
-	// source sets for java and resources are on "src", only put once into the jar
-	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 publishing {
@@ -172,8 +196,10 @@ val pdfJar by tasks.registering(Jar::class) {
 	description = "Assembles a jar containing dependencies to create PDFs."
 	manifest.attributes["Main-Class"] = "net.sourceforge.plantuml.Run"
 	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-	val dependencies = configurations.runtimeClasspath.get().map(::zipTree)
-	from(dependencies)
+  val dependencies = configurations["pdfJarDeps"].map(::zipTree) + configurations.runtimeClasspath.get().map(::zipTree)
+	from(dependencies) {
+        exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA") // Avoid conflict on signature
+    }
 	with(tasks.jar.get())
 	archiveAppendix.set("pdf")
 }

@@ -40,12 +40,12 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.atmp.CucaDiagram;
 import net.sourceforge.plantuml.AnnotatedBuilder;
 import net.sourceforge.plantuml.AnnotatedWorker;
 import net.sourceforge.plantuml.FileFormatOption;
 import net.sourceforge.plantuml.abel.Link;
 import net.sourceforge.plantuml.core.ImageData;
-import net.sourceforge.plantuml.cucadiagram.ICucaDiagram;
 import net.sourceforge.plantuml.dot.CucaDiagramSimplifierActivity;
 import net.sourceforge.plantuml.dot.CucaDiagramSimplifierState;
 import net.sourceforge.plantuml.dot.DotData;
@@ -55,13 +55,12 @@ import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.log.Logme;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
 
-public final class CucaDiagramFileMakerSvek implements CucaDiagramFileMaker {
+public final class CucaDiagramFileMakerSvek extends CucaDiagramFileMaker {
 	// ::remove file when __CORE__
 
-	private final ICucaDiagram diagram;
+	public CucaDiagramFileMakerSvek(CucaDiagram diagram) throws IOException {
+		super(diagram);
 
-	public CucaDiagramFileMakerSvek(ICucaDiagram diagram) throws IOException {
-		this.diagram = diagram;
 	}
 
 	public ImageData createFile(OutputStream os, List<String> dotStrings, FileFormatOption fileFormatOption)
@@ -79,33 +78,36 @@ public final class CucaDiagramFileMakerSvek implements CucaDiagramFileMaker {
 		throw new UnsupportedOperationException();
 	}
 
-	private GeneralImageBuilder createDotDataImageBuilder(DotMode dotMode, StringBounder stringBounder) {
-		final DotData dotData = new DotData(diagram.getEntityFactory().getRootGroup(), getOrderedLinks(),
-				diagram.getEntityFactory().leafs(), diagram.getUmlDiagramType(), diagram.getSkinParam(), diagram,
-				diagram, diagram.getEntityFactory(), diagram.isHideEmptyDescriptionForState(), dotMode,
-				diagram.getNamespaceSeparator(), diagram.getPragma());
-		return new GeneralImageBuilder(dotData, diagram.getEntityFactory(), diagram.getSource(), diagram.getPragma(),
-				stringBounder, diagram.getUmlDiagramType().getStyleName());
-
-	}
-
 	private ImageData createFileInternal(OutputStream os, List<String> dotStrings, FileFormatOption fileFormatOption)
 			throws IOException, InterruptedException {
-		final StringBounder stringBounder = fileFormatOption.getDefaultStringBounder(diagram.getSkinParam());
-		if (diagram.getUmlDiagramType() == UmlDiagramType.ACTIVITY)
-			new CucaDiagramSimplifierActivity(diagram, dotStrings, stringBounder);
-		else if (diagram.getUmlDiagramType() == UmlDiagramType.STATE)
-			new CucaDiagramSimplifierState(diagram, dotStrings, stringBounder);
 
-		GeneralImageBuilder svek2 = createDotDataImageBuilder(DotMode.NORMAL, stringBounder);
+		final StringBounder stringBounder = fileFormatOption.getDefaultStringBounder(diagram.getSkinParam());
+
+		if (diagram.getUmlDiagramType() == UmlDiagramType.ACTIVITY)
+			new CucaDiagramSimplifierActivity().simplify(diagram, stringBounder, DotMode.NORMAL);
+		else if (diagram.getUmlDiagramType() == UmlDiagramType.STATE)
+			new CucaDiagramSimplifierState().simplify(diagram, stringBounder, DotMode.NORMAL);
+
+		final DotStringFactory dotStringFactory = new DotStringFactory(bibliotekon, clusterManager.getCurrent(),
+				diagram.getUmlDiagramType(), diagram.getSkinParam());
+
+		final DotData dotData = new DotData(diagram, diagram.getRootGroup(), getOrderedLinks(), diagram.leafs(),
+				diagram, diagram);
+
+		GraphvizImageBuilder imageBuilder = new GraphvizImageBuilder(dotData, diagram.getSource(), diagram.getPragma(),
+				diagram.getUmlDiagramType().getStyleName(), DotMode.NORMAL, dotStringFactory, clusterManager);
 		BaseFile basefile = null;
 		if (fileFormatOption.isDebugSvek() && os instanceof NamedOutputStream)
 			basefile = ((NamedOutputStream) os).getBasefile();
 
-		TextBlock result = svek2.buildImage(basefile, diagram.getDotStringSkek(), fileFormatOption.isDebugSvek());
+		TextBlock result = imageBuilder.buildImage(stringBounder, basefile, diagram.getDotStringSkek(),
+				fileFormatOption.isDebugSvek());
 		if (result instanceof GraphvizCrash) {
-			svek2 = createDotDataImageBuilder(DotMode.NO_LEFT_RIGHT_AND_XLABEL, stringBounder);
-			result = svek2.buildImage(basefile, diagram.getDotStringSkek(), fileFormatOption.isDebugSvek());
+			imageBuilder = new GraphvizImageBuilder(dotData, diagram.getSource(), diagram.getPragma(),
+					diagram.getUmlDiagramType().getStyleName(), DotMode.NO_LEFT_RIGHT_AND_XLABEL, dotStringFactory,
+					clusterManager);
+			result = imageBuilder.buildImage(stringBounder, basefile, diagram.getDotStringSkek(),
+					fileFormatOption.isDebugSvek());
 		}
 		// TODO There is something strange with the left margin of mainframe, I think
 		// because AnnotatedWorker is used here
@@ -118,7 +120,7 @@ public final class CucaDiagramFileMakerSvek implements CucaDiagramFileMaker {
 		final String widthwarning = diagram.getSkinParam().getValue("widthwarning");
 		String warningOrError = null;
 		if (widthwarning != null && widthwarning.matches("\\d+"))
-			warningOrError = svek2.getWarningOrError(Integer.parseInt(widthwarning));
+			warningOrError = imageBuilder.getWarningOrError(Integer.parseInt(widthwarning));
 
 		// Sorry about this hack. There is a side effect in
 		// SvekResult::calculateDimension()

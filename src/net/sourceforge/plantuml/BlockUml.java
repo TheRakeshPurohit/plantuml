@@ -36,7 +36,6 @@
 package net.sourceforge.plantuml;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static net.sourceforge.plantuml.utils.CharsetUtils.charsetOrDefault;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -53,12 +52,13 @@ import net.sourceforge.plantuml.code.Transcoder;
 import net.sourceforge.plantuml.code.TranscoderUtil;
 import net.sourceforge.plantuml.core.Diagram;
 import net.sourceforge.plantuml.error.PSystemErrorPreprocessor;
+import net.sourceforge.plantuml.jaws.Jaws;
 import net.sourceforge.plantuml.log.Logme;
 import net.sourceforge.plantuml.preproc.Defines;
 import net.sourceforge.plantuml.preproc.FileWithSuffix;
-import net.sourceforge.plantuml.preproc2.PreprocessorModeSet;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.preproc.ReadLineWithYamlHeader;
 import net.sourceforge.plantuml.regex.Matcher2;
-import net.sourceforge.plantuml.style.ISkinSimple;
 import net.sourceforge.plantuml.text.BackSlash;
 import net.sourceforge.plantuml.text.StringLocated;
 import net.sourceforge.plantuml.tim.TimLoader;
@@ -74,8 +74,9 @@ public class BlockUml {
 	private List<StringLocated> debug;
 	private Diagram system;
 	private final Defines localDefines;
-	private final ISkinSimple skinParam;
+	private final Previous previous;
 	private final Set<FileWithSuffix> included = new HashSet<>();
+	private final PreprocessingArtifact preprocessingArtifact;
 
 	public Set<FileWithSuffix> getIncluded() {
 		return Collections.unmodifiableSet(included);
@@ -121,33 +122,36 @@ public class BlockUml {
 
 	private boolean preprocessorError;
 
-	/**
-	 * @deprecated being kept for backwards compatibility, perhaps other projects
-	 *             are using this?
-	 */
-	@Deprecated
-	public BlockUml(List<StringLocated> strings, Defines defines, ISkinSimple skinParam, PreprocessorModeSet mode) {
-		this(strings, defines, skinParam, mode, charsetOrDefault(mode.getCharset()));
-	}
+//	/**
+//	 * @deprecated being kept for backwards compatibility, perhaps other projects
+//	 *             are using this?
+//	 */
+//	@Deprecated
+//	public BlockUml(List<StringLocated> strings, Defines defines, Map<String, String> skinMap,
+//			DefinitionsContainer definitions) {
+//		this(strings, defines, skinMap, definitions, charsetOrDefault(definitions.getCharset()));
+//	}
 
-	public BlockUml(List<StringLocated> strings, Defines defines, ISkinSimple skinParam, PreprocessorModeSet mode,
-			Charset charset) {
-		this.rawSource = new ArrayList<>(strings);
+	public BlockUml(List<StringLocated> strings, Defines defines, Previous previous,
+			DefinitionsContainer definitions, Charset charset) {
+		this.rawSource = ReadLineWithYamlHeader.removeYamlHeader(strings);
 		this.localDefines = defines;
-		this.skinParam = skinParam;
-		final String s0 = strings.get(0).getTrimmed().getString();
-		if (StartUtils.startsWithSymbolAnd("start", s0) == false)
-			throw new IllegalArgumentException();
+		this.previous = previous;
 
-		if (mode == null) {
-			this.data = new ArrayList<>(strings);
+		if (definitions == null) {
+			this.data = new ArrayList<>(this.rawSource);
+			this.preprocessingArtifact = new PreprocessingArtifact();
 		} else {
-			final TimLoader timLoader = new TimLoader(mode.getImportedFiles(), defines, charset,
-					(DefinitionsContainer) mode);
-			this.included.addAll(timLoader.load(strings));
-			this.data = timLoader.getResultList();
+			final TimLoader timLoader = new TimLoader(definitions.getImportedFiles(), defines, charset, definitions,
+					this.rawSource.get(0));
+			this.included.addAll(timLoader.load(this.rawSource));
+			List<StringLocated> tmp = timLoader.getResultList();
+			tmp = Jaws.expands0(tmp);
+			tmp = Jaws.expandsJawsForPreprocessor(tmp);
+			this.data = tmp;
 			this.debug = timLoader.getDebug();
 			this.preprocessorError = timLoader.isPreprocessorError();
+			this.preprocessingArtifact = timLoader.getPreprocessingArtifact();
 		}
 	}
 
@@ -183,10 +187,9 @@ public class BlockUml {
 	public Diagram getDiagram() {
 		if (system == null) {
 			if (preprocessorError)
-				system = new PSystemErrorPreprocessor(data, debug);
+				system = new PSystemErrorPreprocessor(data, debug, preprocessingArtifact);
 			else
-				system = new PSystemBuilder().createPSystem(data, rawSource,
-						skinParam == null ? Collections.<String, String>emptyMap() : skinParam.values());
+				system = new PSystemBuilder().createPSystem(data, rawSource, previous, preprocessingArtifact);
 		}
 		return system;
 	}

@@ -37,6 +37,7 @@ package net.sourceforge.plantuml.activitydiagram3.command;
 
 import net.sourceforge.plantuml.activitydiagram3.ActivityDiagram3;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.decoration.Rainbow;
 import net.sourceforge.plantuml.descdiagram.command.CommandLinkElement;
@@ -101,11 +102,11 @@ public class CommandRepeatWhile3 extends SingleLineCommand2<ActivityDiagram3> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(ActivityDiagram3 diagram, LineLocation location, RegexResult arg)
+	protected CommandExecutionResult executeArg(ActivityDiagram3 diagram, LineLocation location, RegexResult arg, ParserPass currentPass)
 			throws NoSuchColorException {
-		final Display test = Display.getWithNewlines(arg.getLazzy("TEST", 0));
-		final Display yes = Display.getWithNewlines(arg.getLazzy("WHEN", 0));
-		final Display out = Display.getWithNewlines(arg.getLazzy("OUT", 0));
+		final Display test = Display.getWithNewlines(diagram.getPragma(), arg.getLazzy("TEST", 0));
+		final Display yes = Display.getWithNewlines(diagram.getPragma(), arg.getLazzy("WHEN", 0));
+		final Display out = Display.getWithNewlines(diagram.getPragma(), arg.getLazzy("OUT", 0));
 
 		final String colorString = arg.get("COLOR", 0);
 		final Rainbow rainbow;
@@ -116,7 +117,7 @@ public class CommandRepeatWhile3 extends SingleLineCommand2<ActivityDiagram3> {
 					diagram.getSkinParam().colorArrowSeparationSpace());
 		}
 
-		final Display linkLabel = Display.getWithNewlines(arg.get("LABEL", 0));
+		final Display linkLabel = Display.getWithNewlines(diagram.getPragma(), arg.get("LABEL", 0));
 		return diagram.repeatWhile(test, yes, out, linkLabel, rainbow);
 	}
 

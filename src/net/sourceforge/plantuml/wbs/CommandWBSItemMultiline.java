@@ -41,6 +41,7 @@ import net.sourceforge.plantuml.StringUtils;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.command.CommandMultilines2;
 import net.sourceforge.plantuml.command.MultilinesStrategy;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.Trim;
 import net.sourceforge.plantuml.klimt.color.HColor;
 import net.sourceforge.plantuml.klimt.color.NoSuchColorException;
@@ -51,6 +52,7 @@ import net.sourceforge.plantuml.regex.RegexConcat;
 import net.sourceforge.plantuml.regex.RegexLeaf;
 import net.sourceforge.plantuml.regex.RegexOptional;
 import net.sourceforge.plantuml.regex.RegexResult;
+import net.sourceforge.plantuml.stereo.Stereotype;
 import net.sourceforge.plantuml.utils.BlocLines;
 import net.sourceforge.plantuml.utils.Direction;
 
@@ -72,7 +74,7 @@ public class CommandWBSItemMultiline extends CommandMultilines2<WBSDiagram> {
 
 	@Override
 	public String getPatternEnd() {
-		return "^(.*);(?:\\s*\\<\\<(.+)\\>\\>)?$";
+		return "^(.*);\\s*(\\<\\<(.+)\\>\\>)?$";
 	}
 
 	static IRegex getRegexConcatOld() {
@@ -86,7 +88,7 @@ public class CommandWBSItemMultiline extends CommandMultilines2<WBSDiagram> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeNow(WBSDiagram diagram, BlocLines lines) throws NoSuchColorException {
+	protected CommandExecutionResult executeNow(WBSDiagram diagram, BlocLines lines, ParserPass currentPass) throws NoSuchColorException {
 		final RegexResult line0 = getStartingPattern().matcher(lines.getFirst().getTrimmed().getString());
 
 		final List<String> lineLast = StringUtils.getSplit(MyPattern.cmpile(getPatternEnd()),
@@ -105,7 +107,7 @@ public class CommandWBSItemMultiline extends CommandMultilines2<WBSDiagram> {
 
 		Direction dir = Direction.RIGHT;
 
-		return diagram.addIdea(null, backColor, diagram.getSmartLevel(type), lines.toDisplay(), stereotype, dir,
+		return diagram.addIdea(null, backColor, diagram.getSmartLevel(type), lines.toDisplay(), Stereotype.build(stereotype), dir,
 				IdeaShape.fromDesc(line0.get("SHAPE", 0)));
 
 	}

@@ -36,14 +36,16 @@
 package net.sourceforge.plantuml.nwdiag;
 
 import java.util.List;
-import java.util.Map;
 
+import net.sourceforge.plantuml.Previous;
 import net.sourceforge.plantuml.command.Command;
 import net.sourceforge.plantuml.command.CommandFootboxIgnored;
 import net.sourceforge.plantuml.command.CommonCommands;
 import net.sourceforge.plantuml.command.PSystemCommandFactory;
 import net.sourceforge.plantuml.core.DiagramType;
 import net.sourceforge.plantuml.core.UmlSource;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.skin.UmlDiagramType;
 
 public class NwDiagramFactory extends PSystemCommandFactory {
 
@@ -52,8 +54,8 @@ public class NwDiagramFactory extends PSystemCommandFactory {
 	}
 
 	@Override
-	public NwDiagram createEmptyDiagram(UmlSource source, Map<String, String> skinParam) {
-		return new NwDiagram(source);
+	public NwDiagram createEmptyDiagram(UmlSource source, Previous previous, PreprocessingArtifact preprocessing) {
+		return new NwDiagram(source, preprocessing);
 	}
 
 	@Override
@@ -68,6 +70,11 @@ public class NwDiagramFactory extends PSystemCommandFactory {
 		cmds.add(new CommandProperty());
 		cmds.add(new CommandEndSomething());
 		cmds.add(new CommandFootboxIgnored());
+	}
+
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return UmlDiagramType.NWDIAG;
 	}
 
 }

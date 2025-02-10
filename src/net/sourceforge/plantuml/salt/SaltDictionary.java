@@ -48,8 +48,11 @@ import net.sourceforge.plantuml.klimt.font.FontConfiguration;
 import net.sourceforge.plantuml.klimt.geom.HorizontalAlignment;
 import net.sourceforge.plantuml.klimt.sprite.Sprite;
 import net.sourceforge.plantuml.klimt.sprite.SpriteContainer;
+import net.sourceforge.plantuml.preproc.ConfigurationStore;
+import net.sourceforge.plantuml.preproc.OptionKey;
 import net.sourceforge.plantuml.salt.element.Element;
 import net.sourceforge.plantuml.salt.element.WrappedElement;
+import net.sourceforge.plantuml.skin.Pragma;
 import net.sourceforge.plantuml.style.ISkinSimple;
 import net.sourceforge.plantuml.style.Style;
 import net.sourceforge.plantuml.text.Guillemet;
@@ -57,6 +60,11 @@ import net.sourceforge.plantuml.text.Guillemet;
 public class SaltDictionary implements SpriteContainer, ISkinSimple {
 
 	private final Map<String, Element> data = new HashMap<String, Element>();
+	private final ConfigurationStore<OptionKey> option;
+
+	public SaltDictionary(ConfigurationStore<OptionKey> option) {
+		this.option = option;
+	}
 
 	public void put(String name, Element element) {
 		data.put(name, element);
@@ -143,6 +151,16 @@ public class SaltDictionary implements SpriteContainer, ISkinSimple {
 	public SheetBuilder sheet(FontConfiguration fontConfiguration, HorizontalAlignment horizontalAlignment,
 			CreoleMode creoleMode, FontConfiguration stereo) {
 		return new CreoleParser(fontConfiguration, horizontalAlignment, this, creoleMode, stereo);
+	}
+
+	@Override
+	public Pragma getPragma() {
+		return Pragma.createEmpty();
+	}
+
+	@Override
+	public ConfigurationStore<OptionKey> option() {
+		return option;
 	}
 
 }

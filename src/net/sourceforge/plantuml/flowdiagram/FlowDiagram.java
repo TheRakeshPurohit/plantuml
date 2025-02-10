@@ -35,7 +35,7 @@
  */
 package net.sourceforge.plantuml.flowdiagram;
 
-import static net.atmp.ImageBuilder.imageBuilder;
+
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -71,6 +71,7 @@ import net.sourceforge.plantuml.klimt.geom.XRectangle2D;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.klimt.shape.UEllipse;
 import net.sourceforge.plantuml.klimt.shape.ULine;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
 import net.sourceforge.plantuml.style.ClockwiseTopRightBottomLeft;
 
@@ -92,8 +93,8 @@ public class FlowDiagram extends UmlDiagram implements TextBlock {
 		return new DiagramDescription("Flow Diagram");
 	}
 
-	public FlowDiagram(UmlSource source) {
-		super(source, UmlDiagramType.FLOW, null);
+	public FlowDiagram(UmlSource source, PreprocessingArtifact preprocessing) {
+		super(source, UmlDiagramType.FLOW, null, preprocessing);
 	}
 
 	public void lineSimple(TileGeometry orientation, String idDest, String label) {
@@ -127,7 +128,7 @@ public class FlowDiagram extends UmlDiagram implements TextBlock {
 
 	@Override
 	public ImageBuilder createImageBuilder(FileFormatOption fileFormatOption) throws IOException {
-		return imageBuilder(fileFormatOption)
+		return ImageBuilder.create(fileFormatOption)
 				.dimension(calculateDimension(fileFormatOption.getDefaultStringBounder(getSkinParam())))
 				.margin(getDefaultMargins()).metadata(fileFormatOption.isWithMetadata() ? getMetadata() : null)
 				.seed(seed());

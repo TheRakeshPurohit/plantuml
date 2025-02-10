@@ -51,6 +51,7 @@ import net.sourceforge.plantuml.klimt.sprite.SpriteContainerEmpty;
 import net.sourceforge.plantuml.project.TimeHeaderParameters;
 import net.sourceforge.plantuml.project.time.Day;
 import net.sourceforge.plantuml.project.timescale.TimeScale;
+import net.sourceforge.plantuml.skin.Pragma;
 import net.sourceforge.plantuml.style.PName;
 import net.sourceforge.plantuml.style.SName;
 
@@ -130,7 +131,7 @@ public abstract class TimeHeader {
 	protected final TextBlock getTextBlock(SName param, String text, boolean bold, HColor color) {
 		final UFont font = thParam.getStyle(SName.timeline, param).getUFont();
 		final FontConfiguration fontConfiguration = getFontConfiguration(font, bold, color);
-		return Display.getWithNewlines(text).create(fontConfiguration, HorizontalAlignment.LEFT,
+		return Display.getWithNewlines(getPragma(), text).create(fontConfiguration, HorizontalAlignment.LEFT,
 				new SpriteContainerEmpty());
 	}
 
@@ -161,15 +162,20 @@ public abstract class TimeHeader {
 
 		ug = ug.apply(HColors.none());
 		ug = ug.apply(new UTranslate(x1, getFullHeaderHeight(ug.getStringBounder())));
-		ug.draw(URectangle.build(x2 - x1, height));
+		if (x2 > x1)
+			ug.draw(URectangle.build(x2 - x1, height));
 	}
 
 	protected void printVerticalSeparators(UGraphic ug, double totalHeightWithoutFooter) {
 		ug = thParam.forVerticalSeparator(ug);
 		for (Day wink = getMin(); wink.compareTo(getMax()) <= 0; wink = wink.increment())
 			if (isBold2(wink))
-				drawVline(ug, getTimeScale().getStartingPosition(wink),
-						getFullHeaderHeight(ug.getStringBounder()), totalHeightWithoutFooter);
+				drawVline(ug, getTimeScale().getStartingPosition(wink), getFullHeaderHeight(ug.getStringBounder()),
+						totalHeightWithoutFooter);
+	}
+
+	protected Pragma getPragma() {
+		return Pragma.createEmpty();
 	}
 
 }

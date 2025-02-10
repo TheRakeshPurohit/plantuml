@@ -78,13 +78,13 @@ public class CommandPackageEmpty extends SingleLineCommand2<AbstractEntityDiagra
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(AbstractEntityDiagram diagram, LineLocation location, RegexResult arg)
+	protected CommandExecutionResult executeArg(AbstractEntityDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass)
 			throws NoSuchColorException {
 		final String idShort;
 		final String display;
 		if (arg.get("CODE", 0) == null) {
 			if (StringUtils.eventuallyRemoveStartingAndEndingDoubleQuote(arg.get("DISPLAY", 0)).length() == 0) {
-				idShort = "##" + diagram.getUniqueSequence();
+				idShort = "##" + diagram.getUniqueSequence("");
 				display = null;
 			} else {
 				idShort = StringUtils.eventuallyRemoveStartingAndEndingDoubleQuote(arg.get("DISPLAY", 0));
@@ -95,7 +95,7 @@ public class CommandPackageEmpty extends SingleLineCommand2<AbstractEntityDiagra
 			idShort = arg.get("CODE", 0);
 		}
 		final Quark<Entity> quark = diagram.quarkInContext(false, diagram.cleanId(idShort));
-		final CommandExecutionResult status = diagram.gotoGroup(quark, Display.getWithNewlines(display),
+		final CommandExecutionResult status = diagram.gotoGroup(quark, Display.getWithNewlines(diagram.getPragma(), display),
 				GroupType.PACKAGE);
 		if (status.isOk() == false)
 			return status;

@@ -56,6 +56,8 @@ import net.sourceforge.plantuml.klimt.font.UFont;
 import net.sourceforge.plantuml.klimt.geom.HorizontalAlignment;
 import net.sourceforge.plantuml.klimt.geom.Rankdir;
 import net.sourceforge.plantuml.klimt.sprite.Sprite;
+import net.sourceforge.plantuml.preproc.ConfigurationStore;
+import net.sourceforge.plantuml.preproc.OptionKey;
 import net.sourceforge.plantuml.stereo.Stereotype;
 import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.Style;
@@ -459,6 +461,16 @@ public class SkinParamDelegator implements ISkinParam {
 	@Override
 	public Arrows arrows() {
 		return skinParam.arrows();
+	}
+
+	@Override
+	public Pragma getPragma() {
+		return skinParam.getPragma();
+	}
+
+	@Override
+	public ConfigurationStore<OptionKey> option() {
+		return skinParam.option();
 	}
 
 }

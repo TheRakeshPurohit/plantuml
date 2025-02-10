@@ -53,6 +53,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
+import net.sourceforge.plantuml.Previous;
 import net.sourceforge.plantuml.StringUtils;
 import net.sourceforge.plantuml.TikzFontDistortion;
 import net.sourceforge.plantuml.activitydiagram3.ftile.ArrowsRegular;
@@ -80,6 +81,8 @@ import net.sourceforge.plantuml.klimt.geom.Rankdir;
 import net.sourceforge.plantuml.klimt.sprite.Sprite;
 import net.sourceforge.plantuml.klimt.sprite.SpriteImage;
 import net.sourceforge.plantuml.log.Logme;
+import net.sourceforge.plantuml.preproc.ConfigurationStore;
+import net.sourceforge.plantuml.preproc.OptionKey;
 import net.sourceforge.plantuml.regex.Matcher2;
 import net.sourceforge.plantuml.regex.MyPattern;
 import net.sourceforge.plantuml.regex.Pattern2;
@@ -99,15 +102,23 @@ import net.sourceforge.plantuml.utils.BlocLines;
 
 public class SkinParam implements ISkinParam {
 
+	public static boolean isDark(ISkinParam skinParam) {
+		return "dark".equalsIgnoreCase(skinParam.getValue("mode"));
+	}
+
 	// TODO not clear whether SkinParam or ImageBuilder is responsible for defaults
 	public static final String DEFAULT_PRESERVE_ASPECT_RATIO = "none";
 
 	// private String skin = "debug.skin";
 	private String skin = "plantuml.skin";
 	private StyleBuilder styleBuilder;
+	private final Pragma pragma;
+	private final ConfigurationStore<OptionKey> option;
 
-	private SkinParam(UmlDiagramType type) {
+	private SkinParam(UmlDiagramType type, Pragma pragma, ConfigurationStore<OptionKey> option) {
 		this.type = type;
+		this.pragma = pragma;
+		this.option = option;
 	}
 
 	@Override
@@ -167,6 +178,11 @@ public class SkinParam implements ISkinParam {
 		this.params.putAll(other);
 	}
 
+	public void copyAllFrom(Previous previous) {
+		this.params.putAll(previous.values());
+
+	}
+
 	@Override
 	public Map<String, String> values() {
 		return Collections.unmodifiableMap(params);
@@ -207,14 +223,8 @@ public class SkinParam implements ISkinParam {
 		paramsPendingForStyleMigration.clear();
 	}
 
-	public static SkinParam create(UmlDiagramType type) {
-		return new SkinParam(type);
-	}
-
-	public static SkinParam noShadowing(UmlDiagramType type) {
-		final SkinParam result = new SkinParam(type);
-		result.setParam("shadowing", "false");
-		return result;
+	public static SkinParam create(UmlDiagramType type, Pragma pragma, ConfigurationStore<OptionKey> option) {
+		return new SkinParam(type, pragma, option);
 	}
 
 	private final Map<String, List<String>> cacheCleanForKey = new HashMap<String, List<String>>();
@@ -1232,6 +1242,16 @@ public class SkinParam implements ISkinParam {
 		if (strictUmlStyle())
 			return new ArrowsTriangle();
 		return new ArrowsRegular();
+	}
+
+	@Override
+	public final Pragma getPragma() {
+		return pragma;
+	}
+
+	@Override
+	public ConfigurationStore<OptionKey> option() {
+		return option;
 	}
 
 }

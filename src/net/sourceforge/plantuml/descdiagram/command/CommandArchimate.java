@@ -39,6 +39,7 @@ import net.sourceforge.plantuml.StringUtils;
 import net.sourceforge.plantuml.abel.Entity;
 import net.sourceforge.plantuml.abel.LeafType;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.decoration.symbol.USymbols;
 import net.sourceforge.plantuml.descdiagram.DescriptionDiagram;
@@ -101,7 +102,7 @@ public class CommandArchimate extends SingleLineCommand2<DescriptionDiagram> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(DescriptionDiagram diagram, LineLocation location, RegexResult arg)
+	protected CommandExecutionResult executeArg(DescriptionDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass)
 			throws NoSuchColorException {
 		final String codeRaw = arg.getLazzy("CODE", 0);
 
@@ -113,13 +114,13 @@ public class CommandArchimate extends SingleLineCommand2<DescriptionDiagram> {
 
 		Entity entity = (Entity) quark.getData();
 		if (entity == null)
-			entity = diagram.reallyCreateLeaf(quark, Display.getWithNewlines(display), LeafType.DESCRIPTION,
+			entity = diagram.reallyCreateLeaf(quark, Display.getWithNewlines(diagram.getPragma(), display), LeafType.DESCRIPTION,
 					USymbols.ARCHIMATE);
 
 		final String icon = StereotypePattern.removeChevronBrackets(arg.getLazzy("STEREOTYPE", 0));
 
-		entity.setDisplay(Display.getWithNewlines(display));
-		entity.setUSymbol(USymbols.ARCHIMATE);
+		entity.setDisplay(Display.getWithNewlines(diagram.getPragma(), display));
+
 		if (icon != null)
 			entity.setStereotype(
 					Stereotype.build("<<$archimate/" + icon + ">>", diagram.getSkinParam().getCircledCharacterRadius(),

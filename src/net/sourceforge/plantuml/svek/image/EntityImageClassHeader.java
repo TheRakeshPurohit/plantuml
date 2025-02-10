@@ -74,23 +74,23 @@ public class EntityImageClassHeader extends AbstractEntityImage {
 
 	final private HeaderLayout headerLayout;
 
-	public EntityImageClassHeader(Entity entity, ISkinParam skinParam, PortionShower portionShower) {
-		super(entity, skinParam);
+	public EntityImageClassHeader(Entity entity, PortionShower portionShower) {
+		super(entity);
 
 		final boolean italic = entity.getLeafType() == LeafType.ABSTRACT_CLASS
 				|| entity.getLeafType() == LeafType.INTERFACE;
 
 		final Stereotype stereotype = entity.getStereotype();
-		final boolean displayGenericWithOldFashion = skinParam.displayGenericWithOldFashion();
+		final boolean displayGenericWithOldFashion = getSkinParam().displayGenericWithOldFashion();
 		final String generic = displayGenericWithOldFashion ? null : entity.getGeneric();
 
-		final Style style = StyleSignatureBasic
+		final Style styleHeader = StyleSignatureBasic
 				.of(SName.root, SName.element, SName.classDiagram, SName.class_, SName.header) //
 				.withTOBECHANGED(stereotype) //
 				.with(entity.getStereostyles()) //
-				.getMergedStyle(skinParam.getCurrentStyleBuilder());
-		FontConfiguration fontConfigurationName = FontConfiguration.create(skinParam, style, entity.getColors());
-
+				.getMergedStyle(getSkinParam().getCurrentStyleBuilder());
+		
+		FontConfiguration fontConfigurationName = FontConfiguration.create(getSkinParam(), styleHeader, entity.getColors());
 		if (italic)
 			fontConfigurationName = fontConfigurationName.italic();
 
@@ -98,42 +98,48 @@ public class EntityImageClassHeader extends AbstractEntityImage {
 		if (displayGenericWithOldFashion && entity.getGeneric() != null)
 			display = display.addGeneric(entity.getGeneric());
 
-		TextBlock name = display.create8(fontConfigurationName, HorizontalAlignment.CENTER, skinParam,
-				CreoleMode.FULL_BUT_UNDERSCORE, style.wrapWidth());
+		TextBlock name = display.create8(fontConfigurationName, HorizontalAlignment.CENTER, getSkinParam(),
+				CreoleMode.FULL_BUT_UNDERSCORE, styleHeader.wrapWidth());
 		final VisibilityModifier modifier = entity.getVisibilityModifier();
 		if (modifier == null) {
 			name = TextBlockUtils.withMargin(name, 3, 3, 0, 0);
 		} else {
 			final Rose rose = new Rose();
-			final HColor back = rose.getHtmlColor(skinParam, modifier.getBackground());
-			final HColor fore = rose.getHtmlColor(skinParam, modifier.getForeground());
+			final HColor back = rose.getHtmlColor(getSkinParam(), modifier.getBackground());
+			final HColor fore = rose.getHtmlColor(getSkinParam(), modifier.getForeground());
 
-			final TextBlock uBlock = modifier.getUBlock(skinParam.classAttributeIconSize(), fore, back, false);
+			final TextBlock uBlock = modifier.getUBlock(getSkinParam().classAttributeIconSize(), fore, back, false);
 			name = TextBlockUtils.mergeLR(uBlock, name, VerticalAlignment.CENTER);
 			name = TextBlockUtils.withMargin(name, 3, 3, 0, 0);
 		}
 
 		final TextBlock stereo;
-		List<String> stereotypeLabels = portionShower.getVisibleStereotypeLabels(entity);
+		final List<String> stereotypeLabels = portionShower.getVisibleStereotypeLabels(entity);
 		if (stereotype == null || stereotype.getLabel(Guillemet.DOUBLE_COMPARATOR) == null
 				|| stereotypeLabels.isEmpty())
 			stereo = null;
 		else
 			stereo = TextBlockUtils.withMargin(Display.create(stereotypeLabels).create(
 					FontConfiguration.create(getSkinParam(), FontParam.CLASS_STEREOTYPE, stereotype),
-					HorizontalAlignment.CENTER, skinParam), 1, 0);
+					HorizontalAlignment.CENTER, getSkinParam()), 1, 0);
 
 		TextBlock genericBlock;
 		if (generic == null) {
 			genericBlock = null;
-		} else {
-			genericBlock = Display.getWithNewlines(generic).create(
+		} else {			
+			final Style styleGeneric = StyleSignatureBasic
+					.of(SName.root, SName.element, SName.classDiagram, SName.class_, SName.generic) //
+					.withTOBECHANGED(stereotype) //
+					.with(entity.getStereostyles()) //
+					.getMergedStyle(getSkinParam().getCurrentStyleBuilder());
+
+			genericBlock = Display.getWithNewlines(getSkinParam().getPragma(), generic).create(
 					FontConfiguration.create(getSkinParam(), FontParam.CLASS_STEREOTYPE, stereotype),
-					HorizontalAlignment.CENTER, skinParam);
+					HorizontalAlignment.CENTER, getSkinParam());
 			genericBlock = TextBlockUtils.withMargin(genericBlock, 1, 1);
 
-			final HColor classBackground = skinParam.getBackgroundColor();
-			final HColor classBorder = style.value(PName.LineColor).asColor(skinParam.getIHtmlColorSet());
+			final HColor classBackground = styleGeneric.value(PName.BackGroundColor).asColor(getSkinParam().getIHtmlColorSet());
+			final HColor classBorder = styleGeneric.value(PName.LineColor).asColor(getSkinParam().getIHtmlColorSet());
 
 			genericBlock = new TextBlockGeneric(genericBlock, classBackground, classBorder);
 			genericBlock = TextBlockUtils.withMargin(genericBlock, 1, 1);
@@ -141,7 +147,7 @@ public class EntityImageClassHeader extends AbstractEntityImage {
 
 		final TextBlock circledCharacter;
 		if (portionShower.showPortion(EntityPortion.CIRCLED_CHARACTER, (Entity) getEntity()))
-			circledCharacter = TextBlockUtils.withMargin(getCircledCharacter(entity, skinParam), 4, 0, 5, 5);
+			circledCharacter = TextBlockUtils.withMargin(getCircledCharacter(entity, getSkinParam()), 4, 0, 5, 5);
 		else
 			circledCharacter = null;
 
@@ -165,7 +171,8 @@ public class EntityImageClassHeader extends AbstractEntityImage {
 
 		if (stereotype != null && stereotype.getCharacter() != 0)
 			return new CircledCharacter(stereotype.getCharacter(), getSkinParam().getCircledCharacterRadius(), font,
-					stereotype.getHtmlColor(), spotBorder, fontColor);
+					stereotype.getHtmlColor() == null ? spotBackColor : stereotype.getHtmlColor(), spotBorder,
+					fontColor);
 
 		char circledChar = 0;
 		if (stereotype != null)

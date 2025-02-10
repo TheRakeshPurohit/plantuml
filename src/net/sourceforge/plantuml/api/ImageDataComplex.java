@@ -44,7 +44,6 @@ public class ImageDataComplex extends ImageDataAbstract {
 	private final String warningOrError;
 
 	@SuppressWarnings("unused") // available publicly so retained for backwards compatibility
-
 	public ImageDataComplex(XDimension2D info, CMapData cmap, String warningOrError) {
 		super(info);
 		this.cmap = cmap;
@@ -58,16 +57,24 @@ public class ImageDataComplex extends ImageDataAbstract {
 		setStatus(status);
 	}
 
+	@Override
 	public boolean containsCMapData() {
 		return cmap != null && cmap.containsData();
 	}
 
+	@Override
 	public String getCMapData(String nameId) {
 		return cmap.asString(nameId);
 	}
 
+	@Override
 	public String getWarningOrError() {
 		return warningOrError;
+	}
+
+	@Override
+	public Throwable getRootCause() {
+		return null;
 	}
 
 }

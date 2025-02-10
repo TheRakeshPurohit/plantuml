@@ -1,50 +1,89 @@
 # Conventional Commit
 
-IMPORTANT: *This is a draft*
+**IMPORTANT:** *This is a draft.*
 
-The [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/#summary) is a lightweight 
-convention on top of commit messages. It provides an easy set of rules for creating an explicit commit history.
+The [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/#summary) is a lightweight convention for commit messages. It provides a simple set of rules for creating an explicit, meaningful commit history.
 
+---
 
-### Commit Message Format
-Each commit message consists of a **header**, an **optional URL list** , an **optional body** and an **optional 
-footer**. 
-The header has a 
-special format that includes a **type**, a **scope** and a **subject**:
+## Commit Message Format
 
-```
-<type>[optional scope]: <description>
+Each commit message consists of the following elements:
+
+- **Header** (mandatory): Includes an optional **scope** and a **description**.
+- **Optional URL list**: Links to related GitHub issues, forums, or documents.
+- **Optional body**: Provides additional context or details about the change.
+- **Optional footer(s)**: For metadata like breaking changes or issues being closed.
+
+### Format
+```plaintext
+<emoji>[optional scope]: <description>
 [optional URL list]
 [optional body]
 [optional footer(s)]
 ```
 
-The **header** is mandatory and the **scope** of the header is optional.
+### Header
+The **header** is mandatory. The **scope** within the header is optional.
 
-The **optional URL list** contains some links to github issue or to the forum and documents which issues
-or features is concerned by this commit.
+### Optional URL List
+Use this section to document relevant links, such as GitHub issues or forum discussions related to the commit.
 
+---
 
-### Type
-Must be one of the following:
+## Scope
+The **scope** provides additional context about the change. It is optional but recommended for clarity, especially in projects with multiple modules or components.
 
-* **feat**: A new feature
-* **fix**: A bug fix
-* **docs**: Documentation only changes
-* **style**: Changes that do not affect the meaning of the code (white-space, formatting, missing
-  semi-colons, etc)
-* **refactor**: A code change that neither fixes a bug nor adds a feature
-* **perf**: A code change that improves performance
-* **test**: Adding missing or correcting existing test
-* **chore**: Changes to the build process or auxiliary tools and libraries such as documentation
-  generation
+---
 
-### Scope
+## Subject
+The **subject** is a succinct description of the change and follows these guidelines:
 
-### Subject
-The subject contains succinct description of the change:
+- Use the **imperative, present tense** (e.g., "fix", "add", "remove").
+- Avoid capitalizing the first letter.
+- Do not end with a period (.).
 
-* use the imperative, present tense: "change" not "changed" nor "changes"
-* don't capitalize first letter
-* no dot (.) at the end
+---
+
+## Gitmoji Usage
+
+[Gitmoji](https://gitmoji.dev/) enhances commit messages by adding emojis to represent the intent of the changes. It can be used alongside the Conventional Commits specification to make commit history more visual and expressive.
+
+### Gitmoji Reference Table
+
+| Emoji   | Description                                |
+|---------|--------------------------------------------|
+| ✨      | Introducing new features                   |
+| 🐛      | Fixing a bug                               |
+| 📝      | Writing or updating documentation          |
+| 🎨      | Improving code structure/style             |
+| ♻️      | Refactoring code                           |
+| ⚡️      | Improving performance                      |
+| ✅      | Adding or updating tests                   |
+| 🔧      | Changes to configuration files             |
+| 🚀      | Deployment-related changes                 |
+| 🔒      | Fixing security issues                     |
+| 🌱      | Adding or updating a seed file             |
+| 🔥      | Removing code or files                    |
+| 🚧      | Work in progress (WIP)                    |
+| 📦️      | Add or update compiled files or packages  |
+| ⚗️      | Perform experiments                       |
+| 🎉      | Publish an official release               |
+| 👷      | Add or update CI build system              |
+| 📸      | Snapshot or preview release                |
+| 🐾      | Small, incremental changes or tweaks       |
+| 🖼️      | Enhance visual representation              |
+| 💡      | Suggesting or implementing ideas          |
+
+#### Guidelines for Using Gitmoji
+- Place the corresponding emoji at the beginning of the **description** in the commit message header.
+- Ensure the emoji aligns with the purpose of the change.
+- Add a space immediately after the emoji.
+
+---
+
+### Examples
+- `✨ add user authentication module`
+- `🐛 fix login form validation bug`
+- `📝 update README with setup instructions`
 

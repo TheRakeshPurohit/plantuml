@@ -48,7 +48,6 @@ import net.sourceforge.plantuml.sequencediagram.NotePosition;
 import net.sourceforge.plantuml.skin.ArrowBody;
 import net.sourceforge.plantuml.skin.ArrowComponent;
 import net.sourceforge.plantuml.skin.ArrowConfiguration;
-import net.sourceforge.plantuml.skin.ArrowHead;
 import net.sourceforge.plantuml.skin.Component;
 import net.sourceforge.plantuml.skin.ComponentType;
 import net.sourceforge.plantuml.skin.PaddingParam;
@@ -76,7 +75,8 @@ class Step1Message extends Step1Abstract {
 			final Component compAliveBox = drawingSet.getSkin().createComponent(
 					new Style[] { ComponentType.ALIVE_BOX_OPEN_OPEN.getStyleSignature()
 							.getMergedStyle(drawingSet.getSkinParam().getCurrentStyleBuilder()) },
-					ComponentType.ALIVE_BOX_OPEN_OPEN, null, drawingSet.getSkinParam(), null);
+					ComponentType.ALIVE_BOX_OPEN_OPEN, null, drawingSet.getSkinParam(),
+					message.getParticipant1().getDisplay(false));
 
 			this.messageArrow = new MessageArrow(freeY.getFreeY(range), drawingSet.getSkin(), comp,
 					getLivingParticipantBox1(), getLivingParticipantBox2(), message.getUrl(), compAliveBox);
@@ -203,20 +203,31 @@ class Step1Message extends Step1Abstract {
 		final double posY = getFreeY().getFreeY(getParticipantRange());
 		double deltaY = 0;
 		double deltaX = 0;
+		double halfLifeWidth = getHalfLifeWidth();
 		if (getMessage().isActivate()) {
-			deltaY -= getHalfLifeWidth();
+			deltaY -= halfLifeWidth;
 			if (OptionFlags.STRICT_SELFMESSAGE_POSITION)
 				deltaX += 5;
-
 		}
 		if (getMessage().isDeactivate())
-			deltaY += getHalfLifeWidth();
+			deltaY += halfLifeWidth;
+
+
+		int currentLevel = getLevelAt(posY,halfLifeWidth);
 
 		final Style[] styles = getMessage().getUsedStyles();
 		final ArrowComponent comp = getDrawingSet().getSkin().createComponentArrow(styles, getConfig(),
 				getDrawingSet().getSkinParam(), getMessage().getLabelNumbered());
 		return new MessageSelfArrow(posY, getDrawingSet().getSkin(), comp, getLivingParticipantBox1(), deltaY,
-				getMessage().getUrl(), deltaX);
+				getMessage().getUrl(), deltaX,getConfig().isReverseDefine(), currentLevel, halfLifeWidth);
+	}
+
+	private int getLevelAt(double posY,double halfLifeWidth) {
+		double length = getLivingParticipantBox1().getLiveThicknessAt(getStringBounder(), posY).getSegment().getLength();
+		if (length < halfLifeWidth)
+			return 0;
+
+		return ((int) (length / halfLifeWidth)) - 1;
 	}
 
 	private double getHalfLifeWidth() {
@@ -259,9 +270,6 @@ class Step1Message extends Step1Abstract {
 
 		if (m.getArrowConfiguration().isHidden())
 			result = result.withBody(ArrowBody.HIDDEN);
-
-		if (m.getArrowConfiguration().isAsync())
-			result = result.withHead(ArrowHead.ASYNC);
 
 		result = result.withHead1(m.getArrowConfiguration().getDressing1().getHead());
 		result = result.withHead2(m.getArrowConfiguration().getDressing2().getHead());

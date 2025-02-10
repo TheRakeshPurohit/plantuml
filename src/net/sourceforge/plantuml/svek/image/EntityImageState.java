@@ -57,6 +57,7 @@ import net.sourceforge.plantuml.style.ISkinParam;
 public class EntityImageState extends EntityImageStateCommon {
 
 	final private TextBlock fields;
+	final private HorizontalAlignment horizontalAlignmentFields;
 
 	final private static int MIN_WIDTH = 50;
 	final private static int MIN_HEIGHT = 50;
@@ -68,8 +69,8 @@ public class EntityImageState extends EntityImageStateCommon {
 	final static private double smallMarginX = 7;
 	final static private double smallMarginY = 4;
 
-	public EntityImageState(Entity entity, ISkinParam skinParam) {
-		super(entity, skinParam);
+	public EntityImageState(Entity entity) {
+		super(entity);
 
 		final Stereotype stereotype = entity.getStereotype();
 
@@ -79,7 +80,8 @@ public class EntityImageState extends EntityImageStateCommon {
 		final FontConfiguration fieldsFontConfiguration = getStyleStateHeader()
 				.getFontConfiguration(getSkinParam().getIHtmlColorSet());
 
-		this.fields = list.create8(fieldsFontConfiguration, HorizontalAlignment.LEFT, skinParam, CreoleMode.FULL,
+		this.horizontalAlignmentFields = getStyleStateHeader().getHorizontalAlignment();
+		this.fields = list.create8(fieldsFontConfiguration, horizontalAlignmentFields, getSkinParam(), CreoleMode.FULL,
 				getStyleState().wrapWidth());
 
 	}
@@ -125,7 +127,7 @@ public class EntityImageState extends EntityImageStateCommon {
 
 		final double xFields = MARGIN;
 		final double yFields = yLine + MARGIN_LINE;
-		fields.drawU(ug.apply(new UTranslate(xFields, yFields)));
+		this.horizontalAlignmentFields.draw(ug, fields, xFields, yFields, dimTotal.getWidth());
 
 		if (url != null)
 			ug.closeUrl();

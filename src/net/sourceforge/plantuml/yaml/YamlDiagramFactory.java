@@ -38,8 +38,8 @@ package net.sourceforge.plantuml.yaml;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
+import net.sourceforge.plantuml.Previous;
 import net.sourceforge.plantuml.abel.DisplayPositioned;
 import net.sourceforge.plantuml.command.PSystemAbstractFactory;
 import net.sourceforge.plantuml.core.Diagram;
@@ -52,8 +52,11 @@ import net.sourceforge.plantuml.klimt.creole.Display;
 import net.sourceforge.plantuml.klimt.geom.HorizontalAlignment;
 import net.sourceforge.plantuml.klimt.geom.VerticalAlignment;
 import net.sourceforge.plantuml.log.Logme;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
 import net.sourceforge.plantuml.style.parser.StyleParsingException;
+import net.sourceforge.plantuml.yaml.parser.MonomorphToJson;
+import net.sourceforge.plantuml.yaml.parser.YamlParser;
 
 public class YamlDiagramFactory extends PSystemAbstractFactory {
 
@@ -62,7 +65,7 @@ public class YamlDiagramFactory extends PSystemAbstractFactory {
 	}
 
 	@Override
-	public Diagram createSystem(UmlSource source, Map<String, String> skinParam) {
+	public Diagram createSystem(UmlSource source, Previous previous, PreprocessingArtifact preprocessing) {
 		final List<Highlighted> highlighted = new ArrayList<>();
 		JsonValue yaml = null;
 		StyleExtractor styleExtractor = null;
@@ -82,11 +85,13 @@ public class YamlDiagramFactory extends PSystemAbstractFactory {
 				}
 				list.add(line);
 			}
-			yaml = new SimpleYamlParser().parse(list);
+			// yaml = new SimpleYamlParser().parse(list);
+			yaml = MonomorphToJson.convert(new YamlParser().parse(list));
 		} catch (Exception e) {
 			Logme.error(e);
 		}
-		final JsonDiagram result = new JsonDiagram(source, UmlDiagramType.YAML, yaml, highlighted, styleExtractor);
+		final JsonDiagram result = new JsonDiagram(source, UmlDiagramType.YAML, yaml, highlighted, styleExtractor,
+				preprocessing);
 		if (styleExtractor != null) {
 			try {
 				styleExtractor.applyStyles(result.getSkinParam());
@@ -95,10 +100,15 @@ public class YamlDiagramFactory extends PSystemAbstractFactory {
 			}
 			final String title = styleExtractor.getTitle();
 			if (title != null)
-				result.setTitle(DisplayPositioned.single(Display.getWithNewlines(title), HorizontalAlignment.CENTER,
-						VerticalAlignment.CENTER));
+				result.setTitle(DisplayPositioned.single(Display.getWithNewlines(result.getPragma(), title),
+						HorizontalAlignment.CENTER, VerticalAlignment.CENTER));
 		}
 		return result;
+	}
+
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return UmlDiagramType.YAML;
 	}
 
 }

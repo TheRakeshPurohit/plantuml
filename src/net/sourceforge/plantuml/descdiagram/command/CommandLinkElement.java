@@ -41,6 +41,7 @@ import net.sourceforge.plantuml.abel.LeafType;
 import net.sourceforge.plantuml.abel.Link;
 import net.sourceforge.plantuml.abel.LinkArg;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.decoration.LinkDecor;
 import net.sourceforge.plantuml.decoration.LinkType;
@@ -93,7 +94,7 @@ public class CommandLinkElement extends SingleLineCommand2<DescriptionDiagram> {
 				new RegexOptional(new RegexLeaf("INSIDE", "(0|\\(0\\)|\\(0|0\\))(?=[-=.~])")), //
 				new RegexLeaf("ARROW_STYLE2", "(?:\\[(" + LINE_STYLE + ")\\])?"), //
 				new RegexLeaf("BODY2", "([-=.~]*)"), //
-				new RegexLeaf("HEAD1", "(\\(0|>>|_>|[>^*+#0@(]|[\\:\\|]?\\|>|\\\\\\\\|o[%s]+)?"), //
+				new RegexLeaf("HEAD1", "(\\(0|>>|_>|[>^*+#0@(]|[\\:\\|]?\\|>|\\\\\\\\|//|o[%s]+)?"), //
 
 				RegexLeaf.spaceZeroOrMore(), //
 				new RegexOptional(new RegexLeaf("SECOND_LABEL", "[%g]([^%g]+)[%g]")), //
@@ -145,7 +146,9 @@ public class CommandLinkElement extends SingleLineCommand2<DescriptionDiagram> {
 		else if (head1.equals("+"))
 			d1 = LinkDecor.PLUS;
 		else if (head1.equals("\\\\"))
-			d1 = LinkDecor.HALF_ARROW;
+			d1 = LinkDecor.HALF_ARROW_UP;
+		else if (head1.equals("//"))
+			d1 = LinkDecor.HALF_ARROW_DOWN;
 		else if (head1.equals(">>"))
 			d1 = LinkDecor.ARROW_TRIANGLE;
 		else if (head1.equals("^"))
@@ -247,7 +250,7 @@ public class CommandLinkElement extends SingleLineCommand2<DescriptionDiagram> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(DescriptionDiagram diagram, LineLocation location, RegexResult arg)
+	protected CommandExecutionResult executeArg(DescriptionDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass)
 			throws NoSuchColorException {
 		final String ent1 = arg.get("ENT1", 0);
 		final String ent2 = arg.get("ENT2", 0);
@@ -273,15 +276,15 @@ public class CommandLinkElement extends SingleLineCommand2<DescriptionDiagram> {
 			cl1 = getDummy(diagram, ent1);
 			cl2 = getDummy(diagram, ent2);
 		}
-		final LinkArg linkArg = LinkArg.build(Display.getWithNewlines(labels.getLabelLink()), queue.length(),
+		final LinkArg linkArg = LinkArg.build(Display.getWithNewlines(diagram.getPragma(), labels.getLabelLink()), queue.length(),
 				diagram.getSkinParam().classAttributeIconSize() > 0);
-		Link link = new Link(diagram.getEntityFactory(), diagram.getSkinParam().getCurrentStyleBuilder(), cl1, cl2,
+		Link link = new Link(diagram, diagram.getSkinParam().getCurrentStyleBuilder(), cl1, cl2,
 				linkType, linkArg.withQuantifier(labels.getFirstLabel(), labels.getSecondLabel())
 						.withDistanceAngle(diagram.getLabeldistance(), diagram.getLabelangle()));
-		link.setLinkArrow(labels.getLinkArrow());
 		if (dir == Direction.LEFT || dir == Direction.UP)
 			link = link.getInv();
 
+		link.setLinkArrow(labels.getLinkArrow());
 		link.setColors(color().getColor(arg, diagram.getSkinParam().getIHtmlColorSet()));
 		link.applyStyle(arg.getLazzy("ARROW_STYLE", 0));
 		if (arg.get("STEREOTYPE", 0) != null) {
@@ -304,7 +307,7 @@ public class CommandLinkElement extends SingleLineCommand2<DescriptionDiagram> {
 			final Quark<Entity> quark = diagram.quarkInContext(true, ident);
 			if (quark.getData() != null)
 				return quark.getData();
-			return diagram.reallyCreateLeaf(quark, Display.getWithNewlines(quark.getName()), LeafType.DESCRIPTION,
+			return diagram.reallyCreateLeaf(quark, Display.getWithNewlines(diagram.getPragma(), quark.getName()), LeafType.DESCRIPTION,
 					USymbols.INTERFACE);
 		}
 
@@ -317,7 +320,7 @@ public class CommandLinkElement extends SingleLineCommand2<DescriptionDiagram> {
 			return quark.getData();
 		if (quark.getData() != null)
 			return quark.getData();
-		final Display display = Display.getWithNewlines(quark.getName());
+		final Display display = Display.getWithNewlines(diagram.getPragma(), quark.getName());
 
 		if (codeChar == '(') {
 			if (endWithSlash)

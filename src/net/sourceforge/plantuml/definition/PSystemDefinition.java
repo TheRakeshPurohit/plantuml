@@ -51,6 +51,8 @@ import net.sourceforge.plantuml.klimt.font.UFont;
 import net.sourceforge.plantuml.klimt.geom.HorizontalAlignment;
 import net.sourceforge.plantuml.klimt.shape.UDrawable;
 import net.sourceforge.plantuml.klimt.sprite.SpriteContainerEmpty;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.skin.Pragma;
 
 public class PSystemDefinition extends PlainDiagram implements UDrawable {
     // ::remove folder when __HAXE__
@@ -59,8 +61,8 @@ public class PSystemDefinition extends PlainDiagram implements UDrawable {
 	private final List<String> lines = new ArrayList<>();
 	private final String startLine;
 
-	public PSystemDefinition(UmlSource source, String startLine) {
-		super(source);
+	public PSystemDefinition(UmlSource source, String startLine, PreprocessingArtifact preprocessing) {
+		super(source, preprocessing);
 		this.startLine = startLine;
 	}
 
@@ -76,7 +78,7 @@ public class PSystemDefinition extends PlainDiagram implements UDrawable {
 	public void drawU(UGraphic ug) {
 		final UFont font = UFont.sansSerif(14);
 		final FontConfiguration fc = FontConfiguration.create(font, HColors.BLACK, HColors.BLACK, null);
-		Display.getWithNewlines(startLine).create(fc, HorizontalAlignment.LEFT, new SpriteContainerEmpty()).drawU(ug);
+		Display.getWithNewlines(Pragma.createEmpty(), startLine).create(fc, HorizontalAlignment.LEFT, new SpriteContainerEmpty()).drawU(ug);
 	}
 
 	public void doCommandLine(String line) {

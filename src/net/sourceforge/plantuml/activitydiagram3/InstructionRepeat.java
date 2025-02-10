@@ -44,6 +44,7 @@ import net.sourceforge.plantuml.activitydiagram3.ftile.BoxStyle;
 import net.sourceforge.plantuml.activitydiagram3.ftile.Ftile;
 import net.sourceforge.plantuml.activitydiagram3.ftile.FtileFactory;
 import net.sourceforge.plantuml.activitydiagram3.ftile.FtileKilled;
+import net.sourceforge.plantuml.activitydiagram3.ftile.FtileUtils;
 import net.sourceforge.plantuml.activitydiagram3.ftile.Swimlane;
 import net.sourceforge.plantuml.activitydiagram3.ftile.Swimlanes;
 import net.sourceforge.plantuml.activitydiagram3.gtile.Gtile;
@@ -76,7 +77,8 @@ public class InstructionRepeat extends AbstractInstruction implements Instructio
 
 	private Display backward = Display.NULL;
 
-	private Stereotype stereotype;
+	private Stereotype stereotypeLoop;
+	private Stereotype stereotypeBack;
 	private LinkRendering incoming1 = LinkRendering.none();
 	private LinkRendering incoming2 = LinkRendering.none();
 	private List<PositionedNote> backwardNotes = new ArrayList<>();
@@ -95,7 +97,7 @@ public class InstructionRepeat extends AbstractInstruction implements Instructio
 	}
 
 	public InstructionRepeat(Swimlanes swimlanes, Instruction parent, LinkRendering nextLinkRenderer, HColor color,
-			Display startLabel, BoxStyle boxStyleIn, Colors colors) {
+			Display startLabel, BoxStyle boxStyleIn, Colors colors, Stereotype stereotype) {
 		this.currentStyleBuilder = swimlanes.getCurrentStyleBuilder();
 		this.swimlanes = swimlanes;
 		this.swimlane = swimlanes.getCurrentSwimlane();
@@ -105,6 +107,7 @@ public class InstructionRepeat extends AbstractInstruction implements Instructio
 		this.parent = parent;
 		this.nextLinkRenderer = Objects.requireNonNull(nextLinkRenderer);
 		this.colors = colors;
+		this.stereotypeLoop = stereotype;
 	}
 
 	private boolean isLastOfTheParent() {
@@ -121,7 +124,7 @@ public class InstructionRepeat extends AbstractInstruction implements Instructio
 		this.boxStyle = boxStyle;
 		this.incoming1 = incoming1;
 		this.incoming2 = incoming2;
-		this.stereotype = stereotype;
+		this.stereotypeBack = stereotype;
 	}
 
 	public boolean hasBackward() {
@@ -157,22 +160,24 @@ public class InstructionRepeat extends AbstractInstruction implements Instructio
 
 	public Ftile createFtile(FtileFactory factory) {
 		final Ftile back = getFtileBackward(factory);
-		final Ftile decorateOut = factory.decorateOut(repeatList.createFtile(factory), endRepeatLinkRendering);
+		Ftile tmp = repeatList.createFtile(factory);
+		tmp = factory.decorateOut(tmp, endRepeatLinkRendering);
 		if (this.testCalled == false && incoming1.isNone())
 			incoming1 = swimlanes.nextLinkRenderer();
-		final Ftile result = factory.repeat(boxStyleIn, swimlane, swimlaneOut, startLabel, decorateOut, test, yes, out,
-				colors, back, isLastOfTheParent(), incoming1, incoming2, currentStyleBuilder);
+		tmp = factory.repeat(boxStyleIn, stereotypeLoop, swimlane, swimlaneOut, startLabel, tmp, test,
+				yes, out, colors, back, isLastOfTheParent(), incoming1, incoming2, currentStyleBuilder);
+		tmp = FtileUtils.withSwimlaneIn(tmp, swimlane);
 		if (killed)
-			return new FtileKilled(result);
+			return new FtileKilled(tmp);
 
-		return result;
+		return tmp;
 	}
 
 	private Ftile getFtileBackward(FtileFactory factory) {
 		if (Display.isNull(backward))
 			return null;
 
-		Ftile result = factory.activity(backward, swimlaneBackward, boxStyle, Colors.empty(), stereotype);
+		Ftile result = factory.activity(backward, swimlaneBackward, boxStyle, Colors.empty(), stereotypeBack);
 		if (backwardNotes.size() > 0)
 			result = factory.addNote(result, swimlaneBackward, backwardNotes, VerticalAlignment.CENTER);
 
@@ -209,11 +214,11 @@ public class InstructionRepeat extends AbstractInstruction implements Instructio
 	}
 
 	@Override
-	public boolean addNote(Display note, NotePosition position, NoteType type, Colors colors, Swimlane swimlaneNote) {
+	public boolean addNote(Display note, NotePosition position, NoteType type, Colors colors, Swimlane swimlaneNote, Stereotype stereotype) {
 		if (Display.isNull(backward))
-			return repeatList.addNote(note, position, type, colors, swimlaneNote);
+			return repeatList.addNote(note, position, type, colors, swimlaneNote, stereotype);
 
-		this.backwardNotes.add(new PositionedNote(note, position, type, swimlaneNote, colors));
+		this.backwardNotes.add(new PositionedNote(note, position, type, swimlaneNote, colors, stereotype));
 		return true;
 
 	}

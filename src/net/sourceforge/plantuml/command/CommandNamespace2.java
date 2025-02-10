@@ -82,13 +82,13 @@ public class CommandNamespace2 extends SingleLineCommand2<ClassDiagram> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(ClassDiagram diagram, LineLocation location, RegexResult arg)
+	protected CommandExecutionResult executeArg(ClassDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass)
 			throws NoSuchColorException {
 		final String idShort = arg.get("NAME", 0);
 		final Quark<Entity> quark = diagram.quarkInContext(false, diagram.cleanId(idShort));
 
 		final String disp = arg.getLazzy("DISPLAY", 0);
-		final Display display = Display.getWithNewlines(disp);
+		final Display display = Display.getWithNewlines(diagram.getPragma(), disp);
 		final CommandExecutionResult status = diagram.gotoGroup(quark, display, GroupType.PACKAGE);
 		if (status.isOk() == false)
 			return status;

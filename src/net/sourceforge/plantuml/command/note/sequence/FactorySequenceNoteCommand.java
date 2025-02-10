@@ -40,6 +40,7 @@ import net.sourceforge.plantuml.command.Command;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.command.CommandMultilines2;
 import net.sourceforge.plantuml.command.MultilinesStrategy;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.command.Trim;
 import net.sourceforge.plantuml.command.note.SingleMultiFactoryCommand;
@@ -119,12 +120,14 @@ public final class FactorySequenceNoteCommand implements SingleMultiFactoryComma
 				return "^end[%s]?(note|hnote|rnote)$";
 			}
 
-			protected CommandExecutionResult executeNow(final SequenceDiagram system, BlocLines lines)
-					throws NoSuchColorException {
+			@Override
+			protected CommandExecutionResult executeNow(final SequenceDiagram diagram, BlocLines lines,
+					ParserPass currentPass) throws NoSuchColorException {
 				final RegexResult line0 = getStartingPattern().matcher(lines.getFirst().getTrimmed().getString());
 				lines = lines.subExtract(1, 1);
-				lines = lines.removeEmptyColumns();
-				return executeInternal(system, line0, lines);
+				lines = lines.removeEmptyColumns().expandsNewline(false);
+				final Display display = lines.toDisplay();
+				return executeInternal(diagram, line0, diagram.manageVariable(display));
 			}
 		};
 	}
@@ -134,24 +137,25 @@ public final class FactorySequenceNoteCommand implements SingleMultiFactoryComma
 
 			@Override
 			protected CommandExecutionResult executeArg(final SequenceDiagram diagram, LineLocation location,
-					RegexResult arg) throws NoSuchColorException {
-				return executeInternal(diagram, arg, BlocLines.getWithNewlines(arg.get("NOTE", 0)));
+					RegexResult arg, ParserPass currentPass) throws NoSuchColorException {
+				final Display display = Display.getWithNewlines(diagram.getPragma(), arg.get("NOTE", 0));
+				return executeInternal(diagram, arg, diagram.manageVariable(display));
 			}
 
 		};
 	}
 
-	private CommandExecutionResult executeInternal(SequenceDiagram diagram, RegexResult arg, BlocLines strings)
+	private CommandExecutionResult executeInternal(SequenceDiagram diagram, RegexResult arg, Display display)
 			throws NoSuchColorException {
 		final Participant p = diagram.getOrCreateParticipant(
 				StringUtils.eventuallyRemoveStartingAndEndingDoubleQuote(arg.get("PARTICIPANT", 0)));
 
 		final NotePosition position = NotePosition.valueOf(StringUtils.goUpperCase(arg.get("POSITION", 0)));
 
-		if (strings.size() > 0) {
+		if (display.size() > 0) {
 			final boolean tryMerge = arg.get("VMERGE", 0) != null;
 			final boolean parallel = arg.get("PARALLEL", 0) != null;
-			final Display display = diagram.manageVariable(strings.toDisplay());
+
 			final Note note = new Note(p, position, display, diagram.getSkinParam().getCurrentStyleBuilder());
 			Colors colors = color().getColor(arg, diagram.getSkinParam().getIHtmlColorSet());
 			final String stereotypeString = arg.getLazzy("STEREO", 0);

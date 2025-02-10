@@ -36,6 +36,7 @@
 package net.sourceforge.plantuml.mindmap;
 
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.klimt.color.HColor;
 import net.sourceforge.plantuml.klimt.color.NoSuchColorException;
@@ -55,7 +56,7 @@ public class CommandMindMapOrgmode extends SingleLineCommand2<MindMapDiagram> {
 
 	static IRegex getRegexConcat() {
 		return RegexConcat.build(CommandMindMapOrgmode.class.getName(), RegexLeaf.start(), //
-				new RegexLeaf("TYPE", "([ \t]*\\*+)"), //
+				new RegexLeaf("TYPE", "([ \t]*[*#]+)"), //
 				new RegexOptional(new RegexLeaf("BACKCOLOR", "\\[(#\\w+)\\]")), //
 				new RegexLeaf("SHAPE", "(_)?"), //
 				RegexLeaf.spaceOneOrMore(), //
@@ -63,7 +64,7 @@ public class CommandMindMapOrgmode extends SingleLineCommand2<MindMapDiagram> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(MindMapDiagram diagram, LineLocation location, RegexResult arg)
+	protected CommandExecutionResult executeArg(MindMapDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass)
 			throws NoSuchColorException {
 		final String type = arg.get("TYPE", 0);
 		final String label = arg.get("LABEL", 0);
@@ -72,7 +73,7 @@ public class CommandMindMapOrgmode extends SingleLineCommand2<MindMapDiagram> {
 		if (stringColor != null)
 			backColor = diagram.getSkinParam().getIHtmlColorSet().getColor(stringColor);
 
-		return diagram.addIdea(backColor, diagram.getSmartLevel(type), Display.getWithNewlines(label),
+		return diagram.addIdea(backColor, diagram.getSmartLevel(type), Display.getWithNewlines(diagram.getPragma(), label),
 				IdeaShape.fromDesc(arg.get("SHAPE", 0)));
 	}
 }

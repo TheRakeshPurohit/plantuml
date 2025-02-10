@@ -41,7 +41,6 @@ import java.util.List;
 
 import net.sourceforge.plantuml.abel.DisplayPositioned;
 import net.sourceforge.plantuml.abel.Entity;
-import net.sourceforge.plantuml.abel.EntityPortion;
 import net.sourceforge.plantuml.abel.GroupType;
 import net.sourceforge.plantuml.activitydiagram3.ftile.EntityImageLegend;
 import net.sourceforge.plantuml.cucadiagram.PortionShower;
@@ -63,14 +62,18 @@ public final class ClusterHeader {
 
 	private int titleAndAttributeWidth = 0;
 	private int titleAndAttributeHeight = 0;
-	final private TextBlock title;
-	final private TextBlock stereo;
+	private final TextBlock title;
+	private final TextBlock stereo;
+	private final Entity g;
 
-	public ClusterHeader(Entity g, ISkinParam skinParam, PortionShower portionShower, StringBounder stringBounder) {
+	public ClusterHeader(Entity g, PortionShower portionShower, StringBounder stringBounder) {
 
-		this.title = getTitleBlock(g, skinParam);
-		this.stereo = getStereoBlock(g, skinParam, portionShower);
-		final TextBlock stereoAndTitle = TextBlockUtils.mergeTB(stereo, title, HorizontalAlignment.CENTER);
+		final ISkinParam skinParam = g.getSkinParam();
+
+		this.g = g;
+		this.title = getTitleBlock();
+		this.stereo = getStereoBlock(portionShower);
+		final TextBlock stereoAndTitle = TextBlockUtils.mergeTB(stereo, title, getTitleHorizontalAlignment());
 		final XDimension2D dimLabel = stereoAndTitle.calculateDimension(stringBounder);
 		if (dimLabel.getWidth() > 0) {
 			final XDimension2D dimAttribute = ((Entity) g).getStateHeader(skinParam).calculateDimension(stringBounder);
@@ -104,12 +107,32 @@ public final class ClusterHeader {
 		return stereo;
 	}
 
-	private TextBlock getTitleBlock(Entity g, ISkinParam skinParam) {
+	private TextBlock getTitleBlock() {
 		final Display label = g.getDisplay();
 		if (label == null)
 			return TextBlockUtils.empty(0, 0);
 
-		final SName sname = skinParam.getUmlDiagramType().getStyleName();
+		final Style style = getStyle();
+
+		final FontConfiguration fontConfiguration = style.getFontConfiguration(g.getSkinParam().getIHtmlColorSet(),
+				g.getColors());
+
+		final HorizontalAlignment alignment = style.getHorizontalAlignment();
+		// final HorizontalAlignment alignment = getTitleHorizontalAlignment();
+		// final HorizontalAlignment alignment = HorizontalAlignment.CENTER;
+		return label.create(fontConfiguration, alignment, g.getSkinParam());
+	}
+
+	public Style getStyle() {
+		final StyleSignatureBasic signature = getSignature();
+		return signature //
+				.withTOBECHANGED(g.getStereotype()) //
+				.with(g.getStereostyles()) //
+				.getMergedStyle(g.getSkinParam().getCurrentStyleBuilder());
+	}
+
+	private StyleSignatureBasic getSignature() {
+		final SName sname = g.getSkinParam().getUmlDiagramType().getStyleName();
 		final StyleSignatureBasic signature;
 		final USymbol uSymbol = g.getUSymbol();
 		if (g.getGroupType() == GroupType.STATE)
@@ -122,36 +145,31 @@ public final class ClusterHeader {
 			signature = StyleSignatureBasic.of(SName.root, SName.element, sname, SName.package_, SName.title);
 		else
 			signature = StyleSignatureBasic.of(SName.root, SName.element, sname, SName.composite, SName.title);
-
-		final Style style = signature //
-				.withTOBECHANGED(g.getStereotype()) //
-				.with(g.getStereostyles()) //
-				.getMergedStyle(skinParam.getCurrentStyleBuilder());
-
-		final FontConfiguration fontConfiguration = style.getFontConfiguration(skinParam.getIHtmlColorSet(),
-				g.getColors());
-
-		final HorizontalAlignment alignment = HorizontalAlignment.CENTER;
-		return label.create(fontConfiguration, alignment, skinParam);
+		return signature;
 	}
 
-	private TextBlock getStereoBlock(Entity g, ISkinParam skinParam, PortionShower portionShower) {
-		final TextBlock stereo = getStereoBlockWithoutLegend(g, portionShower, skinParam);
+	public HorizontalAlignment getTitleHorizontalAlignment() {
+		return getStyle().getHorizontalAlignment();
+	}
+
+	private TextBlock getStereoBlock(PortionShower portionShower) {
+		final TextBlock stereo = getStereoBlockWithoutLegend(portionShower);
 		final DisplayPositioned legend = g.getLegend();
 		if (legend == null || legend.isNull())
 			return stereo;
 
-		final TextBlock legendBlock = EntityImageLegend.create(legend.getDisplay(), skinParam);
+		final TextBlock legendBlock = EntityImageLegend.create(legend.getDisplay(), g.getSkinParam());
 		return DecorateEntityImage.add(legendBlock, stereo, legend.getHorizontalAlignment(),
 				legend.getVerticalAlignment());
 	}
 
-	private TextBlock getStereoBlockWithoutLegend(Entity g, PortionShower portionShower, ISkinParam skinParam) {
+	private TextBlock getStereoBlockWithoutLegend(PortionShower portionShower) {
 		final Stereotype stereotype = g.getStereotype();
 		// final DisplayPositionned legend = g.getLegend();
 		if (stereotype == null)
 			return TextBlockUtils.empty(0, 0);
 
+		final ISkinParam skinParam = g.getSkinParam();
 		final TextBlock tmp = stereotype.getSprite(skinParam);
 		if (tmp != null)
 			return tmp;
@@ -160,16 +178,18 @@ public final class ClusterHeader {
 		if (stereos == null)
 			return TextBlockUtils.empty(0, 0);
 
-		final boolean show = portionShower.showPortion(EntityPortion.STEREOTYPE, g);
-		if (show == false)
+		final List<String> visibleStereotypes = portionShower.getVisibleStereotypeLabels(g);
+		if (visibleStereotypes == null || visibleStereotypes.isEmpty())
 			return TextBlockUtils.empty(0, 0);
 
 		final Style style = Cluster
-				.getDefaultStyleDefinition(skinParam.getUmlDiagramType().getStyleName(), g.getUSymbol(), g.getGroupType())
+				.getDefaultStyleDefinition(skinParam.getUmlDiagramType().getStyleName(), g.getUSymbol(),
+						g.getGroupType())
 				.forStereotypeItself(g.getStereotype()).getMergedStyle(skinParam.getCurrentStyleBuilder());
 
 		final FontConfiguration fontConfiguration = style.getFontConfiguration(skinParam.getIHtmlColorSet());
-		return Display.create(stereos).create(fontConfiguration, HorizontalAlignment.CENTER, skinParam);
+		final HorizontalAlignment horizontalAlignment = getTitleHorizontalAlignment();
+		return Display.create(visibleStereotypes).create(fontConfiguration, horizontalAlignment, skinParam);
 
 	}
 

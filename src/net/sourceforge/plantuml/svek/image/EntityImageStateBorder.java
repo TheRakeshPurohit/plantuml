@@ -41,14 +41,12 @@ import net.sourceforge.plantuml.klimt.UStroke;
 import net.sourceforge.plantuml.klimt.UTranslate;
 import net.sourceforge.plantuml.klimt.color.ColorType;
 import net.sourceforge.plantuml.klimt.color.HColor;
-import net.sourceforge.plantuml.klimt.color.HColors;
 import net.sourceforge.plantuml.klimt.drawing.UGraphic;
 import net.sourceforge.plantuml.klimt.font.FontParam;
 import net.sourceforge.plantuml.klimt.font.StringBounder;
 import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 import net.sourceforge.plantuml.klimt.geom.XPoint2D;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
-import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.PName;
 import net.sourceforge.plantuml.style.SName;
 import net.sourceforge.plantuml.style.Style;
@@ -59,9 +57,8 @@ import net.sourceforge.plantuml.svek.SvekNode;
 
 public class EntityImageStateBorder extends AbstractEntityImageBorder {
 
-	public EntityImageStateBorder(Entity leaf, ISkinParam skinParam, Cluster stateParent, final Bibliotekon bibliotekon,
-			SName sname) {
-		super(leaf, skinParam, stateParent, bibliotekon, FontParam.STATE);
+	public EntityImageStateBorder(Entity leaf, Cluster stateParent, final Bibliotekon bibliotekon) {
+		super(leaf, stateParent, bibliotekon, FontParam.STATE);
 	}
 
 	@Override

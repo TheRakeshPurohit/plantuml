@@ -46,6 +46,7 @@ import net.sourceforge.plantuml.project.TimeHeaderParameters;
 import net.sourceforge.plantuml.project.time.Day;
 import net.sourceforge.plantuml.project.time.MonthYear;
 import net.sourceforge.plantuml.project.timescale.TimeScaleDaily;
+import net.sourceforge.plantuml.project.timescale.TimeScaleDailyHideClosed;
 import net.sourceforge.plantuml.style.PName;
 import net.sourceforge.plantuml.style.SName;
 
@@ -97,8 +98,12 @@ public class TimeHeaderDaily extends TimeHeaderCalendar {
 
 	public TimeHeaderDaily(StringBounder stringBounder, TimeHeaderParameters thParam, Map<Day, String> nameDays,
 			Day printStart) {
-		super(thParam, new TimeScaleDaily(thParam.getCellWidth(stringBounder), thParam.getStartingDay(),
-				thParam.getScale(), printStart));
+		super(thParam,
+				thParam.isHideClosed()
+						? new TimeScaleDailyHideClosed(thParam.getCellWidth(stringBounder), thParam.getStartingDay(),
+								thParam.getScale(), thParam.getOpenClose())
+						: new TimeScaleDaily(thParam.getCellWidth(stringBounder), thParam.getStartingDay(),
+								thParam.getScale(), printStart));
 		this.nameDays = nameDays;
 	}
 
@@ -121,7 +126,7 @@ public class TimeHeaderDaily extends TimeHeaderCalendar {
 		final UGraphic ugVerticalSeparator = thParam.forVerticalSeparator(ug);
 		final UGraphic ugLineColor = ug.apply(getLineColor());
 		for (Day wink = getMin(); wink.compareTo(getMax()) <= 0; wink = wink.increment())
-			if (isBold2(wink))
+			if (isBold2(wink) || getTimeScale().getWidth(wink.decrement()) == 0)
 				drawVline(ugVerticalSeparator, getTimeScale().getStartingPosition(wink),
 						getFullHeaderHeight(ug.getStringBounder()), totalHeightWithoutFooter);
 			else
@@ -142,6 +147,8 @@ public class TimeHeaderDaily extends TimeHeaderCalendar {
 
 	private void drawTextsDayOfWeek(UGraphic ug) {
 		for (Day wink = getMin(); wink.compareTo(getMax()) <= 0; wink = wink.increment()) {
+			if (isHidden(wink))
+				continue;
 			final double x1 = getTimeScale().getStartingPosition(wink);
 			final double x2 = getTimeScale().getEndingPosition(wink);
 			final HColor textColor = getTextBackColor(wink);
@@ -152,11 +159,19 @@ public class TimeHeaderDaily extends TimeHeaderCalendar {
 
 	private void drawTextDayOfMonth(UGraphic ug) {
 		for (Day wink = getMin(); wink.compareTo(getMax()) <= 0; wink = wink.increment()) {
+			if (isHidden(wink))
+				continue;
 			final double x1 = getTimeScale().getStartingPosition(wink);
 			final double x2 = getTimeScale().getEndingPosition(wink);
 			final HColor textColor = getTextBackColor(wink);
 			printCentered(ug, getTextBlock(SName.day, "" + wink.getDayOfMonth(), false, textColor), x1, x2);
 		}
+	}
+
+	private boolean isHidden(Day wink) {
+		if (thParam.isHideClosed() && thParam.getOpenClose().isClosed(wink))
+			return true;
+		return false;
 	}
 
 	private HColor getTextBackColor(Day wink) {

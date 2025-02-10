@@ -53,6 +53,10 @@ public class ETileConcatenation extends ETile {
 		tiles.add(0, tile);
 	}
 
+	public void pushLast(ETile tile) {
+		tiles.add(tile);
+	}
+
 	public void overideFirst(ETile tile) {
 		tiles.set(0, tile);
 	}
@@ -70,7 +74,7 @@ public class ETileConcatenation extends ETile {
 			tile.drawU(ug.apply(new UTranslate(x, fullLinePos - linePos)));
 			x += tile.calculateDimension(stringBounder).getWidth();
 			if (i != tiles.size() - 1) {
-				drawHlineDirected(ug, fullLinePos, x, x + marginx, 0.5);
+				drawHlineDirected(ug, fullLinePos, x, x + marginx, 0.5, 25);
 				x += marginx;
 			}
 		}

@@ -84,7 +84,7 @@ import net.sourceforge.plantuml.utils.Log;
 import net.sourceforge.plantuml.xml.XmlFactories;
 
 public class SvgGraphics {
-    // ::remove file when __HAXE__
+	// ::remove file when __HAXE__
 
 	// http://tutorials.jenkov.com/svg/index.html
 	// http://www.svgbasics.com/
@@ -147,11 +147,14 @@ public class SvgGraphics {
 
 			this.root = getRootNode();
 
+			for (Map.Entry<String, String> ent : option.getRootAttributes().entrySet())
+				root.setAttribute(ent.getKey(), ent.getValue());
+
 			// Create a node named defs, which will be the parent
 			// for a pair of linear gradient definitions.
 			defs = simpleElement("defs");
 			gRoot = simpleElement("g");
-			strokeWidth = "" + option.getScale();
+			strokeWidth = format(1);
 			this.filterUid = "b" + getSeed(seed);
 			this.shadowId = "f" + getSeed(seed);
 			this.gradientId = "g" + getSeed(seed);
@@ -213,7 +216,7 @@ public class SvgGraphics {
 
 	private Element getStylesForInteractiveMode() {
 		final Element style = simpleElement("style");
-		final String text = getData("default.css");
+		final String text = getData(option.getInteractiveBaseFilename() + ".css");
 		if (text == null)
 			return null;
 
@@ -253,7 +256,7 @@ public class SvgGraphics {
 
 	private Element getScriptForInteractiveMode() {
 		final Element script = document.createElement("script");
-		final String text = getData("default.js");
+		final String text = getData(option.getInteractiveBaseFilename() + ".js");
 		if (text == null)
 			return null;
 
@@ -318,6 +321,13 @@ public class SvgGraphics {
 		svg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
 		svg.setAttribute("version", "1.1");
 
+		if (option.getTitle() != null) {
+			// Create a title element and set its text
+			final Element title = (Element) document.createElement("title");
+			title.setTextContent(option.getTitle());
+			svg.appendChild(title);
+		}
+
 		return svg;
 	}
 
@@ -330,7 +340,7 @@ public class SvgGraphics {
 			elt.setAttribute("rx", format(xRadius));
 			elt.setAttribute("ry", format(yRadius));
 			fillMe(elt);
-			elt.setAttribute("style", getStyle());
+			styleMe(elt);
 			addFilterShadowId(elt, deltaShadow);
 			getG().appendChild(elt);
 		}
@@ -344,7 +354,7 @@ public class SvgGraphics {
 			final Element elt = (Element) document.createElement("path");
 			elt.setAttribute("d", path);
 			fillMe(elt);
-			elt.setAttribute("style", getStyle());
+			styleMe(elt);
 			getG().appendChild(elt);
 		}
 		ensureVisible(x1, y1);
@@ -405,12 +415,16 @@ public class SvgGraphics {
 		this.stroke = fixColor(stroke);
 	}
 
+	// https://forum.plantuml.net/12469/package-background-transparent-package-default-background?show=12479#c12479
+	// https://github.com/plantuml/plantuml-server/issues/348#issuecomment-2581253011
 	private String fixColor(String color) {
-		return color == null || "#00000000".equals(color) ? "none" : color;
+		// Since "transparent" isn’t being recognized (even though it should be), we use
+		// #FFFFFF00 as an alternative
+		return color == null || "#00000000".equals(color) ? "#FFFFFF00" : color;
 	}
 
 	public final void setStrokeWidth(double strokeWidth, String strokeDasharray) {
-		this.strokeWidth = "" + (option.getScale() * strokeWidth);
+		this.strokeWidth = format(strokeWidth);
 		this.strokeDasharray = strokeDasharray;
 	}
 
@@ -456,7 +470,7 @@ public class SvgGraphics {
 		elt.setAttribute("width", format(width));
 		elt.setAttribute("height", format(height));
 		fillMe(elt);
-		elt.setAttribute("style", getStyleSpecial());
+		styleMe(elt);
 		return elt;
 	}
 
@@ -468,7 +482,7 @@ public class SvgGraphics {
 			elt.setAttribute("y1", format(y1));
 			elt.setAttribute("x2", format(x2));
 			elt.setAttribute("y2", format(y2));
-			elt.setAttribute("style", getStyle());
+			styleMe(elt);
 			addFilterShadowId(elt, deltaShadow);
 			getG().appendChild(elt);
 		}
@@ -476,33 +490,19 @@ public class SvgGraphics {
 		ensureVisible(x2 + 2 * deltaShadow, y2 + 2 * deltaShadow);
 	}
 
-	private String getStyle() {
+	private void styleMe(Element elt) {
+		if (strokeWidth.equals("0"))
+			return;
+
 		final StringBuilder style = new StringBuilder();
 
 		style.append("stroke:" + stroke + ";");
 		style.append("stroke-width:" + strokeWidth + ";");
-		if (fill.equals("#00000000"))
-			style.append("fill:none;");
 
 		if (strokeDasharray != null)
 			style.append("stroke-dasharray:" + strokeDasharray + ";");
 
-		return style.toString();
-	}
-
-	// https://forum.plantuml.net/12469/package-background-transparent-package-default-background?show=12479#c12479
-	private String getStyleSpecial() {
-		final StringBuilder style = new StringBuilder();
-
-		style.append("stroke:" + stroke + ";");
-		style.append("stroke-width:" + strokeWidth + ";");
-		if (fill.equals("#00000000"))
-			style.append("fill:none;");
-
-		if (strokeDasharray != null)
-			style.append("stroke-dasharray:" + strokeDasharray + ";");
-
-		return style.toString();
+		elt.setAttribute("style", style.toString());
 	}
 
 	public void svgPolygon(double deltaShadow, double... points) {
@@ -519,7 +519,7 @@ public class SvgGraphics {
 			}
 			elt.setAttribute("points", sb.toString());
 			fillMe(elt);
-			elt.setAttribute("style", getStyleSpecial());
+			styleMe(elt);
 			addFilterShadowId(elt, deltaShadow);
 			getG().appendChild(elt);
 		}
@@ -649,10 +649,6 @@ public class SvgGraphics {
 	}
 
 	public void createXml(OutputStream os) throws TransformerException, IOException {
-		if (images.size() == 0) {
-			createXmlInternal(os);
-			return;
-		}
 		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		createXmlInternal(baos);
 		String s = new String(baos.toByteArray());
@@ -744,7 +740,7 @@ public class SvgGraphics {
 		if (hidden == false) {
 			final Element elt = (Element) document.createElement("path");
 			elt.setAttribute("d", sb.toString());
-			elt.setAttribute("style", getStyle());
+			styleMe(elt);
 			fillMe(elt);
 			final String id = path.getComment();
 			if (id != null)
@@ -837,7 +833,6 @@ public class SvgGraphics {
 			final Element elt = (Element) document.createElement("path");
 			elt.setAttribute("d", currentPath.toString());
 			fillMe(elt);
-			// elt elt.setAttribute("style", getStyle());
 			getG().appendChild(elt);
 		}
 		currentPath = null;
@@ -981,11 +976,10 @@ public class SvgGraphics {
 				filter.setAttribute("y", "-1");
 				filter.setAttribute("width", "300%");
 				filter.setAttribute("height", "300%");
-				addFilter(filter, "feGaussianBlur", "result", "blurOut", "stdDeviation", "" + (2 * option.getScale()));
+				addFilter(filter, "feGaussianBlur", "result", "blurOut", "stdDeviation", format(2));
 				addFilter(filter, "feColorMatrix", "type", "matrix", "in", "blurOut", "result", "blurOut2", "values",
 						"0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .4 0");
-				addFilter(filter, "feOffset", "result", "blurOut3", "in", "blurOut2", "dx",
-						"" + (4 * option.getScale()), "dy", "" + (4 * option.getScale()));
+				addFilter(filter, "feOffset", "result", "blurOut3", "in", "blurOut2", "dx", format(4), "dy", format(4));
 				addFilter(filter, "feBlend", "in", "SourceGraphic", "in2", "blurOut3", "mode", "normal");
 				defs.appendChild(filter);
 
@@ -1068,8 +1062,9 @@ public class SvgGraphics {
 		if (SecurityUtils.ignoreThisLink(url))
 			return;
 
-//		if (pendingAction.size() > 0)
-//			closeLink();
+		// https://github.com/plantuml/plantuml/issues/1951
+		if (pendingAction.size() > 0)
+			closeLink();
 
 		pendingAction.add(0, (Element) document.createElement("a"));
 		pendingAction.get(0).setAttribute("target", target);
@@ -1122,9 +1117,23 @@ public class SvgGraphics {
 
 		for (Map.Entry<UGroupType, String> typeIdent : typeIdents.entrySet()) {
 			if (typeIdent.getKey() == UGroupType.ID)
-				pendingAction.get(0).setAttribute("id", typeIdent.getValue());
-			if (option.isInteractive() && typeIdent.getKey() == UGroupType.CLASS)
-				pendingAction.get(0).setAttribute("class", typeIdent.getValue());
+				pendingAction.get(0).setAttribute(UGroupType.ID.getSvgKeyAttributeName(), typeIdent.getValue());
+			
+			if (typeIdent.getKey() == UGroupType.TITLE) {
+				Element title = document.createElement(UGroupType.TITLE.getSvgKeyAttributeName());
+				title.setTextContent(typeIdent.getValue());
+				pendingAction.get(0).appendChild(title);
+			}
+			
+			if (option.isInteractive())
+				switch (typeIdent.getKey()) {
+				case CLASS:
+				case DATA_PARTICIPANT:
+				case DATA_PARTICIPANT_1:
+				case DATA_PARTICIPANT_2:
+					pendingAction.get(0).setAttribute(typeIdent.getKey().getSvgKeyAttributeName(),
+							typeIdent.getValue());
+				}
 		}
 	}
 

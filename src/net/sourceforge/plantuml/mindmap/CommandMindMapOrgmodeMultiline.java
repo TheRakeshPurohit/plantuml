@@ -41,6 +41,7 @@ import net.sourceforge.plantuml.StringUtils;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.command.CommandMultilines2;
 import net.sourceforge.plantuml.command.MultilinesStrategy;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.Trim;
 import net.sourceforge.plantuml.klimt.color.HColor;
 import net.sourceforge.plantuml.klimt.color.NoSuchColorException;
@@ -50,6 +51,7 @@ import net.sourceforge.plantuml.regex.RegexConcat;
 import net.sourceforge.plantuml.regex.RegexLeaf;
 import net.sourceforge.plantuml.regex.RegexOptional;
 import net.sourceforge.plantuml.regex.RegexResult;
+import net.sourceforge.plantuml.stereo.Stereotype;
 import net.sourceforge.plantuml.utils.BlocLines;
 
 public class CommandMindMapOrgmodeMultiline extends CommandMultilines2<MindMapDiagram> {
@@ -60,7 +62,7 @@ public class CommandMindMapOrgmodeMultiline extends CommandMultilines2<MindMapDi
 
 	static IRegex getRegexConcat() {
 		return RegexConcat.build(CommandMindMapOrgmodeMultiline.class.getName(), RegexLeaf.start(), //
-				new RegexLeaf("TYPE", "(\\*+)"), //
+				new RegexLeaf("TYPE", "([*#]+)"), //
 				new RegexOptional(new RegexLeaf("BACKCOLOR", "\\[(#\\w+)\\]")), //
 				new RegexLeaf("SHAPE", "(_)?"), //
 				new RegexLeaf(":"), //
@@ -70,11 +72,11 @@ public class CommandMindMapOrgmodeMultiline extends CommandMultilines2<MindMapDi
 
 	@Override
 	public String getPatternEnd() {
-		return "^(.*);(?:\\s*\\<\\<(.+)\\>\\>)?$";
+		return "^(.*);\\s*(\\<\\<(.+)\\>\\>)?$";
 	}
 
 	@Override
-	protected CommandExecutionResult executeNow(MindMapDiagram diagram, BlocLines lines) throws NoSuchColorException {
+	protected CommandExecutionResult executeNow(MindMapDiagram diagram, BlocLines lines, ParserPass currentPass) throws NoSuchColorException {
 		final RegexResult line0 = getStartingPattern().matcher(lines.getFirst().getTrimmed().getString());
 
 		final List<String> lineLast = StringUtils.getSplit(MyPattern.cmpile(getPatternEnd()),
@@ -82,22 +84,20 @@ public class CommandMindMapOrgmodeMultiline extends CommandMultilines2<MindMapDi
 		lines = lines.removeStartingAndEnding(line0.get("DATA", 0), 1);
 
 		final String stereotype = lineLast.get(1);
-		if (stereotype != null) {
+		if (stereotype != null)
 			lines = lines.overrideLastLine(lineLast.get(0));
-		}
 
 		final String type = line0.get("TYPE", 0);
 		final String stringColor = line0.get("BACKCOLOR", 0);
 		HColor backColor = null;
-		if (stringColor != null) {
+		if (stringColor != null)
 			backColor = diagram.getSkinParam().getIHtmlColorSet().getColor(stringColor);
-		}
 
-		if (stereotype == null) {
+		if (stereotype == null)
 			return diagram.addIdea(backColor, type.length() - 1, lines.toDisplay(),
 					IdeaShape.fromDesc(line0.get("SHAPE", 0)));
-		}
-		return diagram.addIdea(stereotype, backColor, type.length() - 1, lines.toDisplay(),
+
+		return diagram.addIdea(Stereotype.build(stereotype), backColor, type.length() - 1, lines.toDisplay(),
 				IdeaShape.fromDesc(line0.get("SHAPE", 0)));
 	}
 

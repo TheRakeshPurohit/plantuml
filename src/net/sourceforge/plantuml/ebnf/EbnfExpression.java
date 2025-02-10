@@ -46,6 +46,9 @@ import net.sourceforge.plantuml.klimt.font.FontConfiguration;
 import net.sourceforge.plantuml.klimt.geom.HorizontalAlignment;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.klimt.shape.TextBlockUtils;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.preproc.ConfigurationStore;
+import net.sourceforge.plantuml.preproc.OptionKey;
 import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.PName;
 import net.sourceforge.plantuml.style.SName;
@@ -70,6 +73,8 @@ public class EbnfExpression implements TextBlockable {
 		while (true) {
 			final char ch = it.peek(0);
 			if (Character.isWhitespace(ch)) {
+			} else if (ch == '-') {
+				tokens.add(new Token(Symbol.NOT, null));
 			} else if (isLetterOrDigit(ch)) {
 				final String litteral = readLitteral(it);
 				tokens.add(new Token(Symbol.LITTERAL, litteral));
@@ -127,7 +132,8 @@ public class EbnfExpression implements TextBlockable {
 		return litteral.length() == 0 ? " " : litteral;
 	}
 
-	public TextBlock getUDrawable(ISkinParam skinParam) {
+	@Override
+	public TextBlock getUDrawable(ISkinParam skinParam, PreprocessingArtifact preprocessing) {
 		final Style style = ETile.getStyleSignature().getMergedStyle(skinParam.getCurrentStyleBuilder());
 		final FontConfiguration fc = style.getFontConfiguration(skinParam.getIHtmlColorSet());
 
@@ -147,7 +153,7 @@ public class EbnfExpression implements TextBlockable {
 				if (full.size() == 0)
 					return EbnfEngine.syntaxError(fc, skinParam);
 
-				main = getMainDrawing(skinParam, full.iterator());
+				main = getMainDrawing(skinParam, preprocessing.getOption(), full.iterator());
 			} else {
 				final HColor lineColor = style.value(PName.LineColor).asColor(skinParam.getIHtmlColorSet());
 				main = new ETileWithCircles(new ETileEmpty(), lineColor);
@@ -170,19 +176,21 @@ public class EbnfExpression implements TextBlockable {
 	private TextBlock getNoteAbove(ISkinParam skinParam) {
 		if (commentAbove == null)
 			return null;
-		final FloatingNote note = FloatingNote.create(Display.getWithNewlines(commentAbove), skinParam, SName.ebnf);
+		final FloatingNote note = FloatingNote.create(Display.getWithNewlines(skinParam.getPragma(), commentAbove),
+				skinParam, SName.ebnf);
 		return note;
 	}
 
 	private TextBlock getNoteBelow(ISkinParam skinParam) {
 		if (commentBelow == null)
 			return null;
-		final FloatingNote note = FloatingNote.create(Display.getWithNewlines(commentBelow), skinParam, SName.ebnf);
+		final FloatingNote note = FloatingNote.create(Display.getWithNewlines(skinParam.getPragma(), commentBelow),
+				skinParam, SName.ebnf);
 		return note;
 	}
 
-	private TextBlock getMainDrawing(ISkinParam skinParam, Iterator<Token> it) {
-		final EbnfEngine engine = new EbnfEngine(skinParam);
+	private TextBlock getMainDrawing(ISkinParam skinParam, ConfigurationStore<OptionKey> option, Iterator<Token> it) {
+		final EbnfEngine engine = new EbnfEngine(skinParam, option);
 		while (it.hasNext()) {
 			final Token element = it.next();
 			if (element.getSymbol() == Symbol.TERMINAL_STRING1 || element.getSymbol() == Symbol.TERMINAL_STRING2
@@ -198,8 +206,10 @@ public class EbnfExpression implements TextBlockable {
 				engine.concatenation();
 			else if (element.getSymbol() == Symbol.OPTIONAL)
 				engine.optional();
+			else if (element.getSymbol() == Symbol.NOT)
+				engine.not();
 			else if (element.getSymbol() == Symbol.REPETITION_ZERO_OR_MORE)
-				engine.repetitionZeroOrMore(isCompact);
+				engine.repetitionZeroOrMore();
 			else if (element.getSymbol() == Symbol.REPETITION_ONE_OR_MORE)
 				engine.repetitionOneOrMore();
 			else if (element.getSymbol() == Symbol.REPETITION_SYMBOL)

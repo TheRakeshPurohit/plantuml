@@ -40,6 +40,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import net.sourceforge.plantuml.annotation.DuplicateCode;
 import net.sourceforge.plantuml.klimt.UTranslate;
 import net.sourceforge.plantuml.klimt.color.ColorType;
 import net.sourceforge.plantuml.klimt.color.Colors;
@@ -48,6 +49,7 @@ import net.sourceforge.plantuml.klimt.creole.Display;
 import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 import net.sourceforge.plantuml.mindmap.IdeaShape;
 import net.sourceforge.plantuml.skin.SkinParamColors;
+import net.sourceforge.plantuml.stereo.Stereotype;
 import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.MergeStrategy;
 import net.sourceforge.plantuml.style.SName;
@@ -61,7 +63,7 @@ final public class WElement {
 	private final HColor backColor;
 	private final Display label;
 	private final int level;
-	private final String stereotype;
+	private final Stereotype stereotype;
 	private final WElement parent;
 	private final StyleBuilder styleBuilder;
 	private final List<WElement> childrenLeft = new ArrayList<>();
@@ -70,11 +72,17 @@ final public class WElement {
 	private UTranslate position;
 	private XDimension2D dimension;
 
+	@DuplicateCode(reference = "Idea")
 	private StyleSignatureBasic getDefaultStyleDefinitionNode(int level) {
 		final String depth = SName.depth(level);
 		if (level == 0)
-			return StyleSignatureBasic.of(SName.root, SName.element, SName.wbsDiagram, SName.node, SName.rootNode)
-					.addS(stereotype).add(depth);
+			if (shape == IdeaShape.NONE)
+				return StyleSignatureBasic
+						.of(SName.root, SName.element, SName.wbsDiagram, SName.node, SName.rootNode, SName.boxless)
+						.addS(stereotype).add(depth);
+			else
+				return StyleSignatureBasic.of(SName.root, SName.element, SName.wbsDiagram, SName.node, SName.rootNode)
+						.addS(stereotype).add(depth);
 
 		if (shape == IdeaShape.NONE && isLeaf())
 			return StyleSignatureBasic
@@ -114,12 +122,13 @@ final public class WElement {
 		return result;
 	}
 
-	public WElement(HColor backColor, Display label, String stereotype, StyleBuilder styleBuilder, IdeaShape shape) {
+	public WElement(HColor backColor, Display label, Stereotype stereotype, StyleBuilder styleBuilder,
+			IdeaShape shape) {
 		this(backColor, 0, label, stereotype, null, shape, styleBuilder);
 	}
 
-	private WElement(HColor backColor, int level, Display label, String stereotype, WElement parent, IdeaShape shape,
-			StyleBuilder styleBuilder) {
+	private WElement(HColor backColor, int level, Display label, Stereotype stereotype, WElement parent,
+			IdeaShape shape, StyleBuilder styleBuilder) {
 		this.label = label;
 		this.backColor = backColor;
 		this.level = level;
@@ -133,7 +142,7 @@ final public class WElement {
 		return childrenLeft.size() == 0 && childrenRight.size() == 0;
 	}
 
-	public WElement createElement(HColor backColor, int newLevel, Display newLabel, String stereotype,
+	public WElement createElement(HColor backColor, int newLevel, Display newLabel, Stereotype stereotype,
 			Direction direction, IdeaShape shape, StyleBuilder styleBuilder) {
 		final WElement result = new WElement(backColor, newLevel, newLabel, stereotype, this, shape, styleBuilder);
 		if (direction == Direction.LEFT && newLevel == 1)
@@ -188,6 +197,10 @@ final public class WElement {
 
 	public final XDimension2D getDimension() {
 		return dimension;
+	}
+
+	public Stereotype getStereotype() {
+		return stereotype;
 	}
 
 }

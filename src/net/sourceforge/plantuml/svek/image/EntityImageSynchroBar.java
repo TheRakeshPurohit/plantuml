@@ -44,7 +44,6 @@ import net.sourceforge.plantuml.klimt.font.StringBounder;
 import net.sourceforge.plantuml.klimt.geom.Rankdir;
 import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 import net.sourceforge.plantuml.klimt.shape.URectangle;
-import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.PName;
 import net.sourceforge.plantuml.style.SName;
 import net.sourceforge.plantuml.style.Style;
@@ -54,11 +53,9 @@ import net.sourceforge.plantuml.svek.ShapeType;
 
 public class EntityImageSynchroBar extends AbstractEntityImage {
 
-	// private final SName styleName;
 
-	public EntityImageSynchroBar(Entity entity, ISkinParam skinParam, SName styleName) {
-		super(entity, skinParam);
-		// this.styleName = styleName;
+	public EntityImageSynchroBar(Entity entity) {
+		super(entity);
 	}
 
 	private StyleSignatureBasic getStyleSignature() {
@@ -79,7 +76,7 @@ public class EntityImageSynchroBar extends AbstractEntityImage {
 		final Style style = getStyleSignature().withTOBECHANGED(getEntity().getStereotype())
 				.getMergedStyle(getSkinParam().getCurrentStyleBuilder());
 		final HColor color = style.value(PName.BackGroundColor).asColor(getSkinParam().getIHtmlColorSet());
-		final double shadowing = style.value(PName.Shadowing).asDouble();
+		final double shadowing = style.getShadowing();
 
 		rect.setDeltaShadow(shadowing);
 		ug.apply(HColors.none()).apply(color.bg()).draw(rect);

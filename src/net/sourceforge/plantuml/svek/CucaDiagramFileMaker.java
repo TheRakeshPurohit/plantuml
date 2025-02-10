@@ -39,14 +39,31 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 
+import net.atmp.CucaDiagram;
 import net.sourceforge.plantuml.FileFormatOption;
 import net.sourceforge.plantuml.core.ImageData;
 import net.sourceforge.plantuml.klimt.drawing.UGraphic;
 
-public interface CucaDiagramFileMaker {
+public abstract class CucaDiagramFileMaker {
 
-	public ImageData createFile(OutputStream os, List<String> dotStrings, FileFormatOption fileFormatOption)
+	protected final CucaDiagram diagram;
+	protected final Bibliotekon bibliotekon;
+	protected final ClusterManager clusterManager;
+
+	public CucaDiagramFileMaker(CucaDiagram diagram) {
+		this.diagram = diagram;
+		this.bibliotekon = new Bibliotekon(diagram.getLinks());
+		final Cluster root = new Cluster(diagram, bibliotekon.getColorSequence(), diagram.getRootGroup());
+		this.clusterManager = new ClusterManager(bibliotekon, root);
+
+	}
+
+	protected final Bibliotekon getBibliotekon() {
+		return bibliotekon;
+	}
+
+	public abstract ImageData createFile(OutputStream os, List<String> dotStrings, FileFormatOption fileFormatOption)
 			throws IOException;
 
-	public void createOneGraphic(UGraphic ug);
+	public abstract void createOneGraphic(UGraphic ug);
 }

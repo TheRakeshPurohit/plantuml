@@ -37,6 +37,7 @@ package net.sourceforge.plantuml.sequencediagram.command;
 
 import net.sourceforge.plantuml.StringUtils;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.klimt.color.HColor;
 import net.sourceforge.plantuml.klimt.color.NoSuchColorException;
@@ -68,7 +69,7 @@ abstract class CommandExoArrowAny extends SingleLineCommand2<SequenceDiagram> {
 	}
 
 	@Override
-	final protected CommandExecutionResult executeArg(SequenceDiagram diagram, LineLocation location, RegexResult arg)
+	final protected CommandExecutionResult executeArg(SequenceDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass)
 			throws NoSuchColorException {
 		final String body = arg.getLazzy("ARROW_BODYA", 0) + arg.getLazzy("ARROW_BODYB", 0);
 		final String dressing = arg.getLazzy("ARROW_DRESSING", 0);
@@ -82,7 +83,7 @@ abstract class CommandExoArrowAny extends SingleLineCommand2<SequenceDiagram> {
 		if (arg.get("LABEL", 0) == null)
 			labels = Display.create("");
 		else
-			labels = Display.getWithNewlines(arg.get("LABEL", 0));
+			labels = Display.getWithNewlines(diagram.getPragma(), arg.get("LABEL", 0));
 
 		final boolean bothDirection = arg.get("ARROW_BOTHDRESSING", 0) != null;
 

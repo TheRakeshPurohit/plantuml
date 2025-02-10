@@ -36,6 +36,7 @@
 package net.sourceforge.plantuml.mindmap;
 
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.regex.IRegex;
 import net.sourceforge.plantuml.regex.RegexConcat;
@@ -53,18 +54,18 @@ public class CommandMindMapDirection extends SingleLineCommand2<MindMapDiagram> 
 
 	static IRegex getRegexConcat() {
 		return RegexConcat.build(CommandMindMapDirection.class.getName(), RegexLeaf.start(), //
-				new RegexLeaf("[^*]*"), //
+				new RegexLeaf("[^*#]*"), //
 				new RegexLeaf("\\b"), //
 				new RegexLeaf("DIRECTION", "(left|right|top|bottom)"), //
 				new RegexLeaf("\\b"), //
-				new RegexLeaf("[^*]*"), //
+				new RegexLeaf("[^*#]*"), //
 				new RegexLeaf("(side|direction)"), //
-				new RegexLeaf("[^*]*"), //
+				new RegexLeaf("[^*#]*"), //
 				RegexLeaf.end());
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(MindMapDiagram diagram, LineLocation location, RegexResult arg) {
+	protected CommandExecutionResult executeArg(MindMapDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass) {
 		final String dir = arg.get("DIRECTION", 0);
 		final Direction direction = Direction.lazzyValueOf(dir);
 		diagram.setDefaultDirection(direction);

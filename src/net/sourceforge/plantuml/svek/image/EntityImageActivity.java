@@ -5,12 +5,12 @@
  * (C) Copyright 2009-2024, Arnaud Roques
  *
  * Project Info:  https://plantuml.com
- * 
+ *
  * If you like this project or if you find it useful, you can support us at:
- * 
+ *
  * https://plantuml.com/patreon (only 1$ per month!)
  * https://plantuml.com/paypal
- * 
+ *
  * This file is part of PlantUML.
  *
  * PlantUML is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  *
  *
  * Original Author:  Arnaud Roques
- * 
+ *
  *
  */
 package net.sourceforge.plantuml.svek.image;
@@ -49,7 +49,6 @@ import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.klimt.shape.URectangle;
 import net.sourceforge.plantuml.stereo.Stereotype;
-import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.PName;
 import net.sourceforge.plantuml.style.SName;
 import net.sourceforge.plantuml.style.Style;
@@ -70,16 +69,16 @@ public class EntityImageActivity extends AbstractEntityImage {
 	final private Url url;
 	private final Bibliotekon bibliotekon;
 
-	public EntityImageActivity(Entity entity, ISkinParam skinParam, Bibliotekon bibliotekon) {
-		super(entity, skinParam);
+	public EntityImageActivity(Entity entity, Bibliotekon bibliotekon) {
+		super(entity);
 		this.bibliotekon = bibliotekon;
 
 		final Style style = getDefaultStyleDefinition().getMergedStyle(getSkinParam().getCurrentStyleBuilder());
-		final FontConfiguration fontConfiguration = style.getFontConfiguration(skinParam.getIHtmlColorSet());
+		final FontConfiguration fontConfiguration = style.getFontConfiguration(getSkinParam().getIHtmlColorSet());
 		final HorizontalAlignment horizontalAlignment = style.getHorizontalAlignment();
-		this.shadowing = style.value(PName.Shadowing).asDouble();
+		this.shadowing = style.getShadowing();
 
-		this.desc = entity.getDisplay().create(fontConfiguration, horizontalAlignment, skinParam);
+		this.desc = entity.getDisplay().create(fontConfiguration, horizontalAlignment, getSkinParam());
 		this.url = entity.getUrl99();
 	}
 

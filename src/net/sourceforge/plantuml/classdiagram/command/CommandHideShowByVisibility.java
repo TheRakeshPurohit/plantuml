@@ -44,6 +44,7 @@ import net.sourceforge.plantuml.UmlDiagram;
 import net.sourceforge.plantuml.abel.EntityPortion;
 import net.sourceforge.plantuml.classdiagram.ClassDiagram;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.regex.IRegex;
 import net.sourceforge.plantuml.regex.RegexConcat;
@@ -71,7 +72,7 @@ public class CommandHideShowByVisibility extends SingleLineCommand2<UmlDiagram> 
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(UmlDiagram classDiagram, LineLocation location, RegexResult arg) {
+	protected CommandExecutionResult executeArg(UmlDiagram classDiagram, LineLocation location, RegexResult arg, ParserPass currentPass) {
 		if (classDiagram instanceof ClassDiagram) {
 			return executeArgClass((ClassDiagram) classDiagram, arg);
 		}
@@ -89,7 +90,7 @@ public class CommandHideShowByVisibility extends SingleLineCommand2<UmlDiagram> 
 			addVisibilities(st.nextToken(), portion, visibilities);
 		}
 
-		classDiagram.hideOrShow(visibilities, arg.get("COMMAND", 0).equalsIgnoreCase("show"));
+		classDiagram.hideOrShowVisibilityModifier(visibilities, arg.get("COMMAND", 0).equalsIgnoreCase("show"));
 
 		return CommandExecutionResult.ok();
 	}

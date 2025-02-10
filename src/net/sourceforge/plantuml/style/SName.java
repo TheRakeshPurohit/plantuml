@@ -53,6 +53,7 @@ public enum SName {
 	business, //
 	caption, //
 	card, //
+	cardinality, //
 	circle, //
 	classDiagram, //
 	class_, //
@@ -64,6 +65,10 @@ public enum SName {
 	component, //
 	composite, //
 	robust, //
+	chenAttribute, //
+	chenEerDiagram, //
+	chenEntity, //
+	chenRelationship, //
 	concise, //
 	clock, //
 	componentDiagram, //
@@ -82,17 +87,20 @@ public enum SName {
 	start, //
 	stop, //
 	file, //
+	filesDiagram, //
 	folder, //
 	footer, //
 	frame, //
 	ganttDiagram, //
+	generic, //
 	group, //
 	groupHeader, //
 	header, //
 	hexagon, //
 	highlight, //
 	interface_, //
-	json, jsonDiagram, //
+	json, // 
+	jsonDiagram, //
 	gitDiagram, //
 	label, //
 	leafNode, //
@@ -115,6 +123,7 @@ public enum SName {
 	person, //
 	port, //
 	process, //
+	qualified, //
 	queue, //
 	rectangle, //
 	reference, //

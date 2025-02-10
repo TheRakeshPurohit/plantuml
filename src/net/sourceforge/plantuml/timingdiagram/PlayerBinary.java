@@ -76,7 +76,7 @@ public class PlayerBinary extends Player {
 	private final List<TimingNote> notes = new ArrayList<>();
 
 	public PlayerBinary(String code, ISkinParam skinParam, TimingRuler ruler, boolean compact, Stereotype stereotype) {
-		super(code, skinParam, ruler, compact, stereotype);
+		super(code, skinParam, ruler, compact, stereotype, null);
 		this.suggestedHeight = 30;
 	}
 
@@ -104,10 +104,10 @@ public class PlayerBinary extends Player {
 	}
 
 	@Override
-	public void addNote(TimeTick now, Display note, Position position) {
-		final StyleSignatureBasic signature = StyleSignatureBasic.of(SName.root, SName.element, SName.timingDiagram,
+	public void addNote(TimeTick now, Display note, Position position, Stereotype stereotype) {
+		final StyleSignature signature = StyleSignatureBasic.of(SName.root, SName.element, SName.timingDiagram,
 				SName.note);
-		final Style style = signature.getMergedStyle(skinParam.getCurrentStyleBuilder());
+		final Style style = signature.withTOBECHANGED(stereotype).getMergedStyle(skinParam.getCurrentStyleBuilder());
 
 		this.notes.add(new TimingNote(now, this, note, position, skinParam, style));
 	}
@@ -236,7 +236,7 @@ public class PlayerBinary extends Player {
 	}
 
 	private TextBlock getTextBlock(String value) {
-		final Display display = Display.getWithNewlines(value);
+		final Display display = Display.getWithNewlines(skinParam.getPragma(), value);
 		return display.create(getCommentFontConfiguration(), HorizontalAlignment.LEFT, skinParam);
 	}
 

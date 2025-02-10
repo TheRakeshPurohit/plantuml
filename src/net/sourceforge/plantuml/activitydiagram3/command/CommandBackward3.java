@@ -39,6 +39,7 @@ import net.sourceforge.plantuml.activitydiagram3.ActivityDiagram3;
 import net.sourceforge.plantuml.activitydiagram3.LinkRendering;
 import net.sourceforge.plantuml.activitydiagram3.ftile.BoxStyle;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.decoration.Rainbow;
 import net.sourceforge.plantuml.descdiagram.command.CommandLinkElement;
@@ -87,7 +88,7 @@ public class CommandBackward3 extends SingleLineCommand2<ActivityDiagram3> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(ActivityDiagram3 diagram, LineLocation location, RegexResult arg)
+	protected CommandExecutionResult executeArg(ActivityDiagram3 diagram, LineLocation location, RegexResult arg, ParserPass currentPass)
 			throws NoSuchColorException {
 		final BoxStyle boxStyle;
 		final String styleString = arg.get("STYLE", 0);
@@ -97,13 +98,15 @@ public class CommandBackward3 extends SingleLineCommand2<ActivityDiagram3> {
 		else
 			boxStyle = BoxStyle.fromString(styleString);
 
+		BoxStyle.checkDeprecatedWarning(diagram, styleString);
+
 		final String stereo = arg.get("STYLE", 1);
 
 		Stereotype stereotype = null;
 		if (stereo != null)
 			stereotype = Stereotype.build(stereo);
 
-		final Display label = Display.getWithNewlines(arg.get("LABEL", 0));
+		final Display label = Display.getWithNewlines(diagram.getPragma(), arg.get("LABEL", 0));
 
 		final LinkRendering in = getBackRendering(diagram, arg, "INCOMING");
 		final LinkRendering out = getBackRendering(diagram, arg, "OUTCOMING");
@@ -120,7 +123,7 @@ public class CommandBackward3 extends SingleLineCommand2<ActivityDiagram3> {
 		else
 			in = LinkRendering.create(incomingColor);
 		final String label = arg.get(name, 0);
-		return in.withDisplay(Display.getWithNewlines(label));
+		return in.withDisplay(Display.getWithNewlines(diagram.getPragma(), label));
 	}
 
 	static private Rainbow getRainbow(String key, ActivityDiagram3 diagram, RegexResult arg)

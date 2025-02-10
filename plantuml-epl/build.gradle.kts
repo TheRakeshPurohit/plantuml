@@ -24,11 +24,18 @@ java {
 }
 
 dependencies {
-	compileOnly("org.apache.ant:ant:1.10.14")
-	testImplementation("org.assertj:assertj-core:3.25.3")
-	testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-	testImplementation("org.scilab.forge:jlatexmath:1.0.7")
-	testImplementation("org.xmlunit:xmlunit-core:2.9.+")
+	compileOnly(libs.ant)
+	testImplementation(libs.assertj.core)
+	testImplementation(libs.junit.jupiter)
+	testImplementation(libs.jlatexmath)
+	testImplementation(libs.xmlunit.core)
+
+	implementation(libs.jlatexmath)
+	
+    implementation(libs.elk.core)
+    implementation(libs.elk.alg.layered)
+    implementation(libs.elk.alg.mrtree)
+
 }
 
 repositories {
@@ -70,6 +77,13 @@ tasks.withType<Jar>().configureEach {
 	from("../stdlib") { into("stdlib") }
 	from("../svg") { into("svg") }
 	from("../themes") { into("themes") }
+	from("../resources") { into("resources") }
+	// Add dependencies to the JAR
+    val runtimeClasspath = configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }
+    from(runtimeClasspath) {
+        exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA") // Avoid conflict on signature
+    }
+	
 	// source sets for java and resources are on "src", only put once into the jar
 	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

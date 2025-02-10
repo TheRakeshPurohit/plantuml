@@ -103,19 +103,19 @@ public abstract class CommandMultilines2<S extends Diagram> implements Command<S
 		return finalVerification(lines);
 	}
 
-	public final CommandExecutionResult execute(S system, BlocLines lines) {
+	public final CommandExecutionResult execute(S system, BlocLines lines, ParserPass currentPass) {
 		lines = lines.cleanList(strategy);
 		if (syntaxWithFinalBracket())
 			lines = lines.eventuallyMoveBracket();
 
 		try {
-			return executeNow(system, lines);
+			return executeNow(system, lines, currentPass);
 		} catch (NoSuchColorException e) {
 			return CommandExecutionResult.badColor();
 		}
 	}
 
-	protected abstract CommandExecutionResult executeNow(S system, BlocLines lines) throws NoSuchColorException;
+	protected abstract CommandExecutionResult executeNow(S system, BlocLines lines, ParserPass currentPass) throws NoSuchColorException;
 
 	protected boolean isCommandForbidden() {
 		return false;
@@ -128,5 +128,11 @@ public abstract class CommandMultilines2<S extends Diagram> implements Command<S
 	protected final IRegex getStartingPattern() {
 		return starting;
 	}
+	
+	@Override
+	public boolean isEligibleFor(ParserPass pass) {
+		return pass == ParserPass.ONE;
+	}
+
 
 }

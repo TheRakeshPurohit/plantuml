@@ -40,6 +40,10 @@ public class PlantUmlTestUtils {
 			this.diagram = diagram;
 		}
 
+		public Diagram getDiagram(){
+			return diagram;
+		}
+
 		public ExportDiagram assertDiagramType(Class<? extends Diagram> klass) {
 			assertNoError();
 			assertThat(diagram).isInstanceOf(klass);
