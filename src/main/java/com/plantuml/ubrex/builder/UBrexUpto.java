@@ -30,36 +30,27 @@
  *
  *
  * Original Author:  Arnaud Roques
- * 
  *
  */
-package net.sourceforge.plantuml.klimt.drawing.g2d;
+package com.plantuml.ubrex.builder;
 
-import java.awt.Graphics2D;
+import com.plantuml.ubrex.Challenge;
+import com.plantuml.ubrex.ChallengeOneOrMoreUpToOldVersion;
+import com.plantuml.ubrex.CompositeList;
 
-import net.sourceforge.plantuml.klimt.UParam;
-import net.sourceforge.plantuml.klimt.color.ColorMapper;
-import net.sourceforge.plantuml.klimt.drawing.UDriver;
-import net.sourceforge.plantuml.klimt.font.UFont;
-import net.sourceforge.plantuml.klimt.font.UFontContext;
-import net.sourceforge.plantuml.klimt.font.UnusedSpace;
-import net.sourceforge.plantuml.klimt.shape.UCenteredCharacter;
+public class UBrexUpto extends UBrexPart {
 
-public class DriverCenteredCharacterG2d implements UDriver<UCenteredCharacter, Graphics2D> {
+	public UBrexUpto(UBrexPart what, UBrexPart stop) {
+		super(buildChallenge(what, stop));
+	}
 
-	public void draw(UCenteredCharacter characterCircled, double x, double y, ColorMapper mapper, UParam param,
-			Graphics2D g2d) {
-		final char c = characterCircled.getChar();
-		final UFont font = characterCircled.getFont();
-		final UnusedSpace unusedSpace = UnusedSpace.getUnusedSpace(font, c);
-
-		g2d.setColor(param.getColor().toColor(mapper));
-		final double xpos = x - unusedSpace.getCenterX();
-		final double ypos = y - unusedSpace.getCenterY() - 0.5;
-
-		final String text = "" + c;
-		g2d.setFont(font.getUnderlayingFont(text));
-		g2d.drawString(text, (float) xpos, (float) ypos);
+	private static Challenge buildChallenge(UBrexPart what, UBrexPart stop) {
+		final Challenge p1 = what.getChallenge();
+		final Challenge p2 = stop.getChallenge();
+		final CompositeList result = CompositeList.createEmpty();
+		result.addChallenge(new ChallengeOneOrMoreUpToOldVersion(p1, p2));
+		result.addChallenge(p2);
+		return result;
 	}
 
 }

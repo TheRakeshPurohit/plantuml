@@ -35,17 +35,26 @@
 package com.plantuml.ubrex.builder;
 
 import com.plantuml.ubrex.Challenge;
+import com.plantuml.ubrex.CompositeList;
 import com.plantuml.ubrex.CompositeNamed;
 
 public class UBrexNamed extends UBrexPart {
 
 	public UBrexNamed(String name, UBrexPart origin) {
-		super(create(name, origin.getChallenge()));
+		super(create(name, origin));
 	}
 
-	private static Challenge create(String name, Challenge challenge) {
+	private static Challenge create(String name, UBrexPart part) {
+		if (part instanceof UBrexUpto) {
+			final CompositeList list = (CompositeList) part.getChallenge();
+			final CompositeNamed result = new CompositeNamed(name, list.getInternalChallengesList());
+			return result;
+		}
+
+		final Challenge challenge = part.getChallenge();
 		final CompositeNamed result = new CompositeNamed(name, challenge);
 		return result;
+
 	}
 
 }
